@@ -1,0 +1,393 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================================================
+// ORGANIZATIONS & AUTH
+// ============================================================================
+
+model Organization {
+  id        String   @id @default(cuid())
+  name      String
+  slug      String   @unique
+  settings  Json     @default("{}")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  apiKeys        ApiKey[]
+  profiles       Profile[]
+  events         Event[]
+  segments       Segment[]
+  campaigns      Campaign[]
+  flows          Flow[]
+  emailTemplates EmailTemplate[]
+  emailProviders EmailProvider[]
+  emailSends     EmailSend[]
+  emailEvents    EmailEvent[]
+  suppressions   Suppression[]
+
+  @@map("organizations")
+}
+
+model ApiKey {
+  id             String    @id @default(cuid())
+  organizationId String    @map("organization_id")
+  name           String
+  type           String    // 'public' | 'secret'
+  keyPrefix      String    @map("key_prefix")
+  keyHash        String    @unique @map("key_hash")
+  lastUsedAt     DateTime? @map("last_used_at")
+  expiresAt      DateTime? @map("expires_at")
+  createdAt      DateTime  @default(now()) @map("created_at")
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([keyHash])
+  @@index([organizationId])
+  @@map("api_keys")
+}
+
+// ============================================================================
+// CUSTOMER DATA PLATFORM
+// ============================================================================
+
+model Profile {
+  id             String   @id @default(cuid())
+  organizationId String   @map("organization_id")
+  externalId     String?  @map("external_id")
+  email          String?
+  phone          String?
+  firstName      String?  @map("first_name")
+  lastName       String?  @map("last_name")
+  properties     Json     @default("{}")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  organization        Organization          @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  events              Event[]
+  segmentMemberships  SegmentMembership[]
+  flowEnrollments     FlowEnrollment[]
+  emailSends          EmailSend[]
+  emailEvents         EmailEvent[]
+
+  @@unique([organizationId, email])
+  @@unique([organizationId, externalId])
+  @@index([organizationId])
+  @@index([email])
+  @@index([externalId])
+  @@index([createdAt])
+  @@map("profiles")
+}
+
+model Event {
+  id             String   @id @default(cuid())
+  organizationId String   @map("organization_id")
+  profileId      String   @map("profile_id")
+  name           String
+  properties     Json     @default("{}")
+  timestamp      DateTime @default(now())
+  source         String   @default("api")
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  profile      Profile      @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId, name])
+  @@index([profileId])
+  @@index([timestamp])
+  @@index([organizationId, timestamp])
+  @@map("events")
+}
+
+// ============================================================================
+// SEGMENTATION
+// ============================================================================
+
+model Segment {
+  id               String    @id @default(cuid())
+  organizationId   String    @map("organization_id")
+  name             String
+  description      String?
+  conditions       Json
+  isActive         Boolean   @default(true) @map("is_active")
+  memberCount      Int       @default(0) @map("member_count")
+  lastCalculatedAt DateTime? @map("last_calculated_at")
+  createdAt        DateTime  @default(now()) @map("created_at")
+  updatedAt        DateTime  @updatedAt @map("updated_at")
+
+  organization Organization          @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  memberships  SegmentMembership[]
+  campaigns    CampaignSegment[]
+  flows        Flow[]
+
+  @@index([organizationId])
+  @@index([isActive])
+  @@map("segments")
+}
+
+model SegmentMembership {
+  id        String   @id @default(cuid())
+  segmentId String   @map("segment_id")
+  profileId String   @map("profile_id")
+  enteredAt DateTime @default(now()) @map("entered_at")
+  exitedAt  DateTime? @map("exited_at")
+
+  segment Segment @relation(fields: [segmentId], references: [id], onDelete: Cascade)
+  profile Profile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  @@unique([segmentId, profileId])
+  @@index([segmentId])
+  @@index([profileId])
+  @@map("segment_memberships")
+}
+
+// ============================================================================
+// CAMPAIGNS
+// ============================================================================
+
+model EmailTemplate {
+  id             String   @id @default(cuid())
+  organizationId String   @map("organization_id")
+  name           String
+  subject        String?
+  previewText    String?  @map("preview_text")
+  htmlContent    String?  @map("html_content") @db.Text
+  textContent    String?  @map("text_content") @db.Text
+  variables      Json     @default("[]")
+  isActive       Boolean  @default(true) @map("is_active")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  campaigns    Campaign[]
+
+  @@index([organizationId])
+  @@map("email_templates")
+}
+
+model Campaign {
+  id                String    @id @default(cuid())
+  organizationId    String    @map("organization_id")
+  name              String
+  subject           String
+  previewText       String?   @map("preview_text")
+  fromName          String    @map("from_name")
+  fromEmail         String    @map("from_email")
+  replyTo           String?   @map("reply_to")
+  templateId        String?   @map("template_id")
+  htmlContent       String?   @map("html_content") @db.Text
+  textContent       String?   @map("text_content") @db.Text
+  status            String    @default("draft") // draft, scheduled, sending, sent, cancelled
+  type              String    @default("regular") // regular, ab_test
+  abTestConfig      Json?     @map("ab_test_config")
+  scheduledAt       DateTime? @map("scheduled_at")
+  sentAt            DateTime? @map("sent_at")
+  completedAt       DateTime? @map("completed_at")
+  totalRecipients   Int       @default(0) @map("total_recipients")
+  sentCount         Int       @default(0) @map("sent_count")
+  deliveredCount    Int       @default(0) @map("delivered_count")
+  openCount         Int       @default(0) @map("open_count")
+  clickCount        Int       @default(0) @map("click_count")
+  bounceCount       Int       @default(0) @map("bounce_count")
+  complaintCount    Int       @default(0) @map("complaint_count")
+  unsubscribeCount  Int       @default(0) @map("unsubscribe_count")
+  createdAt         DateTime  @default(now()) @map("created_at")
+  updatedAt         DateTime  @updatedAt @map("updated_at")
+
+  organization Organization      @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  template     EmailTemplate?    @relation(fields: [templateId], references: [id])
+  segments     CampaignSegment[]
+  emailSends   EmailSend[]
+
+  @@index([organizationId])
+  @@index([status])
+  @@index([scheduledAt])
+  @@map("campaigns")
+}
+
+model CampaignSegment {
+  id         String  @id @default(cuid())
+  campaignId String  @map("campaign_id")
+  segmentId  String  @map("segment_id")
+  isExcluded Boolean @default(false) @map("is_excluded")
+
+  campaign Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  segment  Segment  @relation(fields: [segmentId], references: [id], onDelete: Cascade)
+
+  @@unique([campaignId, segmentId])
+  @@map("campaign_segments")
+}
+
+// ============================================================================
+// AUTOMATION FLOWS
+// ============================================================================
+
+model Flow {
+  id             String    @id @default(cuid())
+  organizationId String    @map("organization_id")
+  name           String
+  description    String?
+  status         String    @default("draft") // draft, active, paused, archived
+  triggerType    String    @map("trigger_type") // event, segment_entry, segment_exit, date_property, manual
+  triggerConfig  Json      @map("trigger_config")
+  nodes          Json      @default("[]")
+  edges          Json      @default("[]")
+  settings       Json      @default("{}")
+  triggerSegmentId String? @map("trigger_segment_id")
+  totalEnrolled  Int       @default(0) @map("total_enrolled")
+  activeCount    Int       @default(0) @map("active_count")
+  completedCount Int       @default(0) @map("completed_count")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+
+  organization    Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  triggerSegment  Segment?         @relation(fields: [triggerSegmentId], references: [id])
+  enrollments     FlowEnrollment[]
+  emailSends      EmailSend[]
+
+  @@index([organizationId])
+  @@index([status])
+  @@index([triggerType])
+  @@map("flows")
+}
+
+model FlowEnrollment {
+  id            String    @id @default(cuid())
+  flowId        String    @map("flow_id")
+  profileId     String    @map("profile_id")
+  currentNodeId String?   @map("current_node_id")
+  status        String    @default("active") // active, completed, exited, failed
+  enteredAt     DateTime  @default(now()) @map("entered_at")
+  exitedAt      DateTime? @map("exited_at")
+  exitReason    String?   @map("exit_reason")
+  nextActionAt  DateTime? @map("next_action_at")
+  metadata      Json      @default("{}")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+
+  flow    Flow    @relation(fields: [flowId], references: [id], onDelete: Cascade)
+  profile Profile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  @@unique([flowId, profileId])
+  @@index([flowId])
+  @@index([profileId])
+  @@index([status])
+  @@index([nextActionAt])
+  @@map("flow_enrollments")
+}
+
+// ============================================================================
+// EMAIL PROVIDERS & DELIVERY
+// ============================================================================
+
+model EmailProvider {
+  id                     String    @id @default(cuid())
+  organizationId         String    @map("organization_id")
+  name                   String
+  type                   String    // ses, sendgrid, mixmax
+  config                 Json
+  priority               Int       @default(1)
+  isActive               Boolean   @default(true) @map("is_active")
+  isDefault              Boolean   @default(false) @map("is_default")
+  dailyLimit             Int?      @map("daily_limit")
+  hourlyLimit            Int?      @map("hourly_limit")
+  currentDailyUsage      Int       @default(0) @map("current_daily_usage")
+  currentHourlyUsage     Int       @default(0) @map("current_hourly_usage")
+  usageResetAt           DateTime? @map("usage_reset_at")
+  healthStatus           String    @default("healthy") @map("health_status") // healthy, degraded, unhealthy
+  lastHealthCheck        DateTime? @map("last_health_check")
+  consecutiveFailures    Int       @default(0) @map("consecutive_failures")
+  circuitBreakerOpen     Boolean   @default(false) @map("circuit_breaker_open")
+  circuitBreakerOpenedAt DateTime? @map("circuit_breaker_opened_at")
+  createdAt              DateTime  @default(now()) @map("created_at")
+  updatedAt              DateTime  @updatedAt @map("updated_at")
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  emailSends   EmailSend[]
+
+  @@index([organizationId])
+  @@index([isActive, priority])
+  @@map("email_providers")
+}
+
+model EmailSend {
+  id                String    @id @default(cuid())
+  organizationId    String    @map("organization_id")
+  profileId         String    @map("profile_id")
+  campaignId        String?   @map("campaign_id")
+  flowId            String?   @map("flow_id")
+  flowNodeId        String?   @map("flow_node_id")
+  providerId        String    @map("provider_id")
+  providerMessageId String?   @map("provider_message_id")
+  fromEmail         String    @map("from_email")
+  fromName          String?   @map("from_name")
+  toEmail           String    @map("to_email")
+  subject           String
+  status            String    @default("queued") // queued, sent, delivered, failed
+  sentAt            DateTime? @map("sent_at")
+  deliveredAt       DateTime? @map("delivered_at")
+  failedAt          DateTime? @map("failed_at")
+  failureReason     String?   @map("failure_reason")
+  retryCount        Int       @default(0) @map("retry_count")
+  metadata          Json      @default("{}")
+  createdAt         DateTime  @default(now()) @map("created_at")
+
+  organization Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  profile      Profile       @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  campaign     Campaign?     @relation(fields: [campaignId], references: [id])
+  flow         Flow?         @relation(fields: [flowId], references: [id])
+  provider     EmailProvider @relation(fields: [providerId], references: [id])
+  events       EmailEvent[]
+
+  @@index([organizationId])
+  @@index([profileId])
+  @@index([campaignId])
+  @@index([flowId])
+  @@index([status])
+  @@index([createdAt])
+  @@map("email_sends")
+}
+
+model EmailEvent {
+  id             String   @id @default(cuid())
+  organizationId String   @map("organization_id")
+  emailSendId    String   @map("email_send_id")
+  profileId      String   @map("profile_id")
+  type           String   // sent, delivered, opened, clicked, bounced, complained, unsubscribed
+  timestamp      DateTime @default(now())
+  metadata       Json     @default("{}")
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  emailSend    EmailSend    @relation(fields: [emailSendId], references: [id], onDelete: Cascade)
+  profile      Profile      @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
+  @@index([emailSendId])
+  @@index([profileId])
+  @@index([type])
+  @@index([timestamp])
+  @@map("email_events")
+}
+
+model Suppression {
+  id             String   @id @default(cuid())
+  organizationId String   @map("organization_id")
+  email          String
+  reason         String   // bounce, complaint, unsubscribe, manual
+  bounceType     String?  @map("bounce_type") // hard, soft
+  source         String?
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, email])
+  @@index([organizationId])
+  @@index([email])
+  @@map("suppressions")
+}
