@@ -1,5 +1,4 @@
-export { prisma, PrismaClient } from './client.js';
-export type { Prisma } from './client.js';
+export { prisma, PrismaClient, Prisma } from './client.js';
 
 // Re-export generated types for convenience
 export type {

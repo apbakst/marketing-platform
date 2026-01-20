@@ -81,7 +81,7 @@ class MarketingSDKImpl implements MarketingSDK {
     });
 
     if (response.profileId) {
-      this.userId = response.profileId;
+      this.userId = response.profileId as string;
       this.persistIdentity();
     }
   }

@@ -1,10 +1,10 @@
 import 'dotenv/config';
 import Fastify from 'fastify';
 import cors from '@fastify/cors';
-import Redis from 'ioredis';
+import { Redis } from 'ioredis';
 import { createHash } from 'crypto';
 import { z } from 'zod';
-import { prisma } from '@marketing-platform/database';
+import { prisma, Prisma } from '@marketing-platform/database';
 import { generateId, sanitizeEmail, normalizeProperties, CACHE_KEYS, CACHE_TTL } from '@marketing-platform/shared';
 
 const config = {
@@ -175,7 +175,7 @@ fastify.post('/track', {
         organizationId,
         profileId,
         name: body.name,
-        properties: body.properties ? normalizeProperties(body.properties) : {},
+        properties: (body.properties ? normalizeProperties(body.properties) : {}) as Prisma.InputJsonValue,
         timestamp: body.timestamp ? new Date(body.timestamp) : new Date(),
         source: 'tracking_api',
       },
@@ -213,7 +213,7 @@ fastify.post('/track/batch', {
                 organizationId,
                 profileId,
                 name: event.name,
-                properties: event.properties ? normalizeProperties(event.properties) : {},
+                properties: (event.properties ? normalizeProperties(event.properties) : {}) as Prisma.InputJsonValue,
                 timestamp: event.timestamp ? new Date(event.timestamp) : new Date(),
                 source: 'tracking_api',
               },
@@ -269,7 +269,7 @@ fastify.post('/identify', {
           firstName: body.traits?.firstName,
           lastName: body.traits?.lastName,
           phone: body.traits?.phone,
-          properties: body.properties ? normalizeProperties(body.properties) : {},
+          properties: (body.properties ? normalizeProperties(body.properties) : {}) as Prisma.InputJsonValue,
         },
       });
       created = true;
@@ -286,7 +286,7 @@ fastify.post('/identify', {
             properties: {
               ...(profile.properties as object),
               ...normalizeProperties(body.properties),
-            },
+            } as Prisma.InputJsonValue,
           }),
         },
       });

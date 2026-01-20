@@ -1,9 +1,9 @@
 export const QUEUE_NAMES = {
-  EMAIL_SEND: 'email:send',
-  EMAIL_BATCH: 'email:batch',
-  SEGMENT_CALCULATE: 'segment:calculate',
-  FLOW_ENROLLMENT: 'flow:enrollment',
-  FLOW_EXECUTE: 'flow:execute',
+  EMAIL_SEND: 'email-send',
+  EMAIL_BATCH: 'email-batch',
+  SEGMENT_CALCULATE: 'segment-calculate',
+  FLOW_ENROLLMENT: 'flow-enrollment',
+  FLOW_EXECUTE: 'flow-execute',
   WEBHOOK: 'webhook',
   ANALYTICS: 'analytics',
 } as const;
