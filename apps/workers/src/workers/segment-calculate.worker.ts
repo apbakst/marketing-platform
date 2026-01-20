@@ -1,8 +1,15 @@
 import { Worker, Job } from 'bullmq';
 import { prisma } from '@marketing-platform/database';
-import { QUEUE_NAMES, generateId, ConditionGroup } from '@marketing-platform/shared';
+import {
+  QUEUE_NAMES,
+  generateId,
+  SegmentDefinition,
+  EvaluationProfile,
+  EvaluationEvent,
+} from '@marketing-platform/shared';
 import { connection } from '../lib/redis.js';
 import { config } from '../lib/config.js';
+import { ConditionEvaluator } from '../services/condition-evaluator.js';
 
 export interface SegmentCalculateJobData {
   segmentId: string;
@@ -30,7 +37,7 @@ async function processSegmentCalculate(
     return;
   }
 
-  const conditions = segment.conditions as unknown as ConditionGroup;
+  const conditions = segment.conditions as unknown as SegmentDefinition;
 
   // Evaluate conditions and get matching profiles
   const matchingProfiles = await evaluateSegmentConditions(
@@ -117,9 +124,17 @@ async function processSegmentCalculate(
 
 async function evaluateSegmentConditions(
   organizationId: string,
-  conditions: ConditionGroup
+  conditions: SegmentDefinition
 ): Promise<Array<{ id: string }>> {
-  // Build Prisma where clause from conditions
+  // Check if we have event-based conditions that require full evaluation
+  const hasEventConditions = hasEventBasedConditions(conditions);
+
+  if (hasEventConditions) {
+    // Use full evaluator for event-based segments
+    return evaluateWithEvents(organizationId, conditions);
+  }
+
+  // Build Prisma where clause from conditions for property-only segments
   const whereClause = buildWhereClause(conditions);
 
   const profiles = await prisma.profile.findMany({
@@ -134,13 +149,127 @@ async function evaluateSegmentConditions(
   return profiles;
 }
 
-function buildWhereClause(conditions: ConditionGroup): Record<string, unknown> {
+function hasEventBasedConditions(conditions: SegmentDefinition): boolean {
+  for (const condition of conditions.conditions) {
+    if ('type' in condition && condition.type === 'event') {
+      return true;
+    }
+    if ('operator' in condition && 'conditions' in condition) {
+      if (hasEventBasedConditions(condition as SegmentDefinition)) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+async function evaluateWithEvents(
+  organizationId: string,
+  conditions: SegmentDefinition
+): Promise<Array<{ id: string }>> {
+  // Fetch all profiles with their events
+  const profiles = await prisma.profile.findMany({
+    where: { organizationId },
+    select: {
+      id: true,
+      email: true,
+      phone: true,
+      firstName: true,
+      lastName: true,
+      properties: true,
+      createdAt: true,
+      updatedAt: true,
+    },
+    take: 100000,
+  });
+
+  // Get segment memberships for nested segment conditions
+  const segmentMemberships = await prisma.segmentMembership.findMany({
+    where: {
+      segment: { organizationId },
+      exitedAt: null,
+    },
+    select: { profileId: true, segmentId: true },
+  });
+
+  const membershipsByProfile = new Map<string, string[]>();
+  for (const m of segmentMemberships) {
+    if (!membershipsByProfile.has(m.profileId)) {
+      membershipsByProfile.set(m.profileId, []);
+    }
+    membershipsByProfile.get(m.profileId)!.push(m.segmentId);
+  }
+
+  // Evaluate each profile
+  const matchingProfiles: Array<{ id: string }> = [];
+  const batchSize = 100;
+
+  for (let i = 0; i < profiles.length; i += batchSize) {
+    const batch = profiles.slice(i, i + batchSize);
+    const profileIds = batch.map((p) => p.id);
+
+    // Fetch events for this batch
+    const events = await prisma.event.findMany({
+      where: {
+        profileId: { in: profileIds },
+        organizationId,
+      },
+      select: {
+        profileId: true,
+        name: true,
+        properties: true,
+        timestamp: true,
+      },
+      orderBy: { timestamp: 'desc' },
+      take: 10000, // Limit events per batch
+    });
+
+    const eventsByProfile = new Map<string, EvaluationEvent[]>();
+    for (const event of events) {
+      if (!eventsByProfile.has(event.profileId)) {
+        eventsByProfile.set(event.profileId, []);
+      }
+      eventsByProfile.get(event.profileId)!.push({
+        name: event.name,
+        properties: event.properties as Record<string, unknown>,
+        timestamp: event.timestamp,
+      });
+    }
+
+    // Evaluate each profile in the batch
+    for (const profile of batch) {
+      const evalProfile: EvaluationProfile = {
+        id: profile.id,
+        email: profile.email,
+        phone: profile.phone,
+        firstName: profile.firstName,
+        lastName: profile.lastName,
+        properties: profile.properties as Record<string, unknown>,
+        createdAt: profile.createdAt,
+        updatedAt: profile.updatedAt,
+      };
+
+      const profileEvents = eventsByProfile.get(profile.id) || [];
+      const profileSegments = membershipsByProfile.get(profile.id) || [];
+
+      const evaluator = new ConditionEvaluator(profileEvents, profileSegments);
+
+      if (evaluator.evaluate(evalProfile, conditions)) {
+        matchingProfiles.push({ id: profile.id });
+      }
+    }
+  }
+
+  return matchingProfiles;
+}
+
+function buildWhereClause(conditions: SegmentDefinition): Record<string, unknown> {
   const clauses: Record<string, unknown>[] = [];
 
   for (const condition of conditions.conditions) {
     if ('operator' in condition && 'conditions' in condition) {
       // Nested group
-      clauses.push(buildWhereClause(condition as ConditionGroup));
+      clauses.push(buildWhereClause(condition as unknown as SegmentDefinition));
     } else if ('type' in condition) {
       if (condition.type === 'property') {
         const clause = buildPropertyClause(condition as {

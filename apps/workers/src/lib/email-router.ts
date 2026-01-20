@@ -3,6 +3,7 @@ import {
   EmailProvider,
   SESProvider,
   SendGridProvider,
+  PostmarkProvider,
   EmailMessage,
   SendResult,
 } from '../providers/index.js';
@@ -60,6 +61,12 @@ export class EmailRouter {
       case 'sendgrid':
         return new SendGridProvider({
           apiKey: (providerConfig.apiKey as string) || config.email.sendgrid.apiKey || '',
+        });
+
+      case 'postmark':
+        return new PostmarkProvider({
+          serverToken: (providerConfig.serverToken as string) || config.email.postmark?.serverToken || '',
+          messageStream: (providerConfig.messageStream as string) || config.email.postmark?.messageStream,
         });
 
       default:

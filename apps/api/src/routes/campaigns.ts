@@ -3,6 +3,12 @@ import { z } from 'zod';
 import { campaignService } from '../services/campaign.service.js';
 import { requireSecretKey } from '../middleware/auth.js';
 
+const sendTimeOptimizationSchema = z.object({
+  enabled: z.boolean(),
+  maxDelayHours: z.number().min(1).max(168).optional(), // Max 7 days
+  fallbackHour: z.number().min(0).max(23).optional(), // Fallback if no profile data
+}).optional();
+
 const createCampaignSchema = z.object({
   name: z.string().min(1).max(255),
   subject: z.string().min(1).max(500),
@@ -16,6 +22,7 @@ const createCampaignSchema = z.object({
   segmentIds: z.array(z.string()).optional(),
   excludeSegmentIds: z.array(z.string()).optional(),
   type: z.enum(['regular', 'ab_test']).optional(),
+  sendTimeOptimization: sendTimeOptimizationSchema,
   abTestConfig: z
     .object({
       variants: z.array(
@@ -47,6 +54,7 @@ const updateCampaignSchema = z.object({
   textContent: z.string().optional(),
   segmentIds: z.array(z.string()).optional(),
   excludeSegmentIds: z.array(z.string()).optional(),
+  sendTimeOptimization: sendTimeOptimizationSchema,
   abTestConfig: z
     .object({
       variants: z.array(
@@ -288,6 +296,69 @@ export const campaignRoutes: FastifyPluginAsync = async (fastify) => {
           return reply.status(404).send({
             error: 'Not Found',
             message: 'Campaign not found',
+          });
+        }
+        throw error;
+      }
+    },
+  });
+
+  // Get A/B test stats
+  fastify.get<{ Params: { id: string } }>('/:id/ab-test/stats', {
+    preHandler: requireSecretKey,
+    handler: async (request, reply) => {
+      try {
+        const stats = await campaignService.getABTestStats(
+          request.auth.organizationId,
+          request.params.id
+        );
+        return reply.send({ stats });
+      } catch (error: unknown) {
+        if (error instanceof Error) {
+          if (error.message === 'Campaign not found') {
+            return reply.status(404).send({
+              error: 'Not Found',
+              message: 'Campaign not found',
+            });
+          }
+          if (error.message === 'Campaign is not an A/B test') {
+            return reply.status(400).send({
+              error: 'Bad Request',
+              message: error.message,
+            });
+          }
+        }
+        throw error;
+      }
+    },
+  });
+
+  // Select A/B test winner and send to remaining recipients
+  fastify.post<{ Params: { id: string } }>('/:id/ab-test/select-winner', {
+    preHandler: requireSecretKey,
+    handler: async (request, reply) => {
+      const body = z.object({
+        winnerId: z.string(),
+      }).parse(request.body);
+
+      try {
+        const campaign = await campaignService.selectABTestWinner(
+          request.auth.organizationId,
+          request.params.id,
+          body.winnerId
+        );
+        return reply.send({ campaign });
+      } catch (error: unknown) {
+        if (error instanceof Error) {
+          if (error.message === 'Campaign not found') {
+            return reply.status(404).send({
+              error: 'Not Found',
+              message: 'Campaign not found',
+            });
+          }
+          return reply.status(400).send({
+            error: 'Bad Request',
+            message: error.message,
           });
         }
         throw error;

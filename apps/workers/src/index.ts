@@ -4,6 +4,21 @@ import { closeConnection } from './lib/redis.js';
 import { closeQueues } from './lib/queues.js';
 import { createEmailSendWorker } from './workers/email-send.worker.js';
 import { createSegmentCalculateWorker } from './workers/segment-calculate.worker.js';
+import {
+  startCampaignScheduler,
+  closeCampaignScheduler,
+} from './workers/campaign-scheduler.worker.js';
+import { createFlowTriggerWorker } from './workers/flow-trigger.worker.js';
+import {
+  createFlowExecutorWorker,
+  startFlowExecutor,
+  stopFlowExecutor,
+} from './workers/flow-executor.worker.js';
+import {
+  createSendTimeOptimizationWorker,
+  scheduleDailyRecalculation,
+} from './workers/send-time-optimization.worker.js';
+import { createSmsSendWorker } from './workers/sms-send.worker.js';
 
 const workers: Worker[] = [];
 
@@ -19,11 +34,40 @@ async function main(): Promise<void> {
   workers.push(createSegmentCalculateWorker());
   console.log('Segment calculate worker started');
 
+  // Start the campaign scheduler (polls for scheduled campaigns)
+  startCampaignScheduler();
+
+  workers.push(createFlowTriggerWorker());
+  console.log('Flow trigger worker started');
+
+  workers.push(createFlowExecutorWorker());
+  console.log('Flow executor worker started');
+
+  // Start the flow executor polling (checks for due enrollments)
+  startFlowExecutor();
+
+  workers.push(createSendTimeOptimizationWorker());
+  console.log('Send time optimization worker started');
+
+  workers.push(createSmsSendWorker());
+  console.log('SMS send worker started');
+
+  // Schedule daily recalculation of send times
+  await scheduleDailyRecalculation();
+
   console.log('All workers started successfully');
 }
 
 async function shutdown(): Promise<void> {
   console.log('Shutting down workers...');
+
+  // Close campaign scheduler
+  await closeCampaignScheduler();
+  console.log('Campaign scheduler closed');
+
+  // Close flow executor
+  await stopFlowExecutor();
+  console.log('Flow executor closed');
 
   // Close all workers
   await Promise.all(workers.map((w) => w.close()));

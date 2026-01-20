@@ -10,6 +10,7 @@ import {
   CACHE_TTL,
 } from '@marketing-platform/shared';
 import { redis } from '../lib/redis.js';
+import { realtimeSegmentService } from './realtime-segment.service.js';
 
 export class ProfileService {
   async create(
@@ -30,7 +31,7 @@ export class ProfileService {
         phone: input.phone,
         firstName: input.firstName,
         lastName: input.lastName,
-        properties,
+        properties: properties as Prisma.InputJsonValue,
       },
     });
 
@@ -62,7 +63,7 @@ export class ProfileService {
       updateData.properties = {
         ...(existingProfile?.properties as object || {}),
         ...normalizeProperties(input.properties),
-      };
+      } as Prisma.InputJsonValue;
     }
 
     const profile = await prisma.profile.update({
@@ -74,6 +75,16 @@ export class ProfileService {
     });
 
     await this.cacheProfile(profile);
+
+    // Real-time segment evaluation for profile updates
+    // Run asynchronously to not block the response
+    realtimeSegmentService.evaluateProfileSegments(
+      profileId,
+      organizationId
+    ).catch(err => {
+      console.error('[RealtimeSegment] Error evaluating segments for profile update:', err);
+    });
+
     return profile;
   }
 

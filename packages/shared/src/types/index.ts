@@ -5,3 +5,4 @@ export * from './campaign.js';
 export * from './flow.js';
 export * from './organization.js';
 export * from './email.js';
+export * from './sms.js';

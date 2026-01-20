@@ -30,6 +30,10 @@ model Organization {
   emailSends     EmailSend[]
   emailEvents    EmailEvent[]
   suppressions   Suppression[]
+  smsProviders   SmsProvider[]
+  smsSends       SmsSend[]
+  smsEvents      SmsEvent[]
+  smsConsents    SmsConsent[]
 
   @@map("organizations")
 }
@@ -74,6 +78,9 @@ model Profile {
   flowEnrollments     FlowEnrollment[]
   emailSends          EmailSend[]
   emailEvents         EmailEvent[]
+  smsSends            SmsSend[]
+  smsEvents           SmsEvent[]
+  smsConsents         SmsConsent[]
 
   @@unique([organizationId, email])
   @@unique([organizationId, externalId])
@@ -185,6 +192,7 @@ model Campaign {
   status            String    @default("draft") // draft, scheduled, sending, sent, cancelled
   type              String    @default("regular") // regular, ab_test
   abTestConfig      Json?     @map("ab_test_config")
+  sendTimeConfig    Json?     @map("send_time_config")
   scheduledAt       DateTime? @map("scheduled_at")
   sentAt            DateTime? @map("sent_at")
   completedAt       DateTime? @map("completed_at")
@@ -390,4 +398,127 @@ model Suppression {
   @@index([organizationId])
   @@index([email])
   @@map("suppressions")
+}
+
+// ============================================================================
+// SMS PROVIDERS & DELIVERY
+// ============================================================================
+
+model SmsProvider {
+  id                     String    @id @default(cuid())
+  organizationId         String    @map("organization_id")
+  name                   String
+  type                   String    // twilio
+  config                 Json
+  fromNumber             String    @map("from_number")
+  messagingServiceSid    String?   @map("messaging_service_sid")
+  priority               Int       @default(1)
+  isActive               Boolean   @default(true) @map("is_active")
+  isDefault              Boolean   @default(false) @map("is_default")
+  dailyLimit             Int?      @map("daily_limit")
+  hourlyLimit            Int?      @map("hourly_limit")
+  currentDailyUsage      Int       @default(0) @map("current_daily_usage")
+  currentHourlyUsage     Int       @default(0) @map("current_hourly_usage")
+  healthStatus           String    @default("healthy") @map("health_status")
+  lastHealthCheck        DateTime? @map("last_health_check")
+  consecutiveFailures    Int       @default(0) @map("consecutive_failures")
+  circuitBreakerOpen     Boolean   @default(false) @map("circuit_breaker_open")
+  circuitBreakerOpenedAt DateTime? @map("circuit_breaker_opened_at")
+  createdAt              DateTime  @default(now()) @map("created_at")
+  updatedAt              DateTime  @updatedAt @map("updated_at")
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  smsSends     SmsSend[]
+
+  @@index([organizationId])
+  @@index([isActive, priority])
+  @@map("sms_providers")
+}
+
+model SmsSend {
+  id                String    @id @default(cuid())
+  organizationId    String    @map("organization_id")
+  profileId         String    @map("profile_id")
+  campaignId        String?   @map("campaign_id")
+  flowId            String?   @map("flow_id")
+  flowNodeId        String?   @map("flow_node_id")
+  providerId        String    @map("provider_id")
+  providerMessageId String?   @map("provider_message_id")
+  fromNumber        String    @map("from_number")
+  toNumber          String    @map("to_number")
+  body              String    @db.Text
+  mediaUrl          String?   @map("media_url")
+  status            String    @default("queued") // queued, sent, delivered, failed, undelivered
+  sentAt            DateTime? @map("sent_at")
+  deliveredAt       DateTime? @map("delivered_at")
+  failedAt          DateTime? @map("failed_at")
+  failureReason     String?   @map("failure_reason")
+  errorCode         String?   @map("error_code")
+  segmentCount      Int       @default(1) @map("segment_count")
+  cost              Decimal?  @db.Decimal(10, 4)
+  retryCount        Int       @default(0) @map("retry_count")
+  metadata          Json      @default("{}")
+  createdAt         DateTime  @default(now()) @map("created_at")
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  profile      Profile      @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  provider     SmsProvider  @relation(fields: [providerId], references: [id])
+  events       SmsEvent[]
+
+  @@index([organizationId])
+  @@index([profileId])
+  @@index([campaignId])
+  @@index([flowId])
+  @@index([status])
+  @@index([createdAt])
+  @@map("sms_sends")
+}
+
+model SmsEvent {
+  id             String   @id @default(cuid())
+  organizationId String   @map("organization_id")
+  smsSendId      String   @map("sms_send_id")
+  profileId      String   @map("profile_id")
+  type           String   // sent, delivered, failed, undelivered
+  timestamp      DateTime @default(now())
+  errorCode      String?  @map("error_code")
+  errorMessage   String?  @map("error_message")
+  metadata       Json     @default("{}")
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  smsSend      SmsSend      @relation(fields: [smsSendId], references: [id], onDelete: Cascade)
+  profile      Profile      @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
+  @@index([smsSendId])
+  @@index([profileId])
+  @@index([type])
+  @@index([timestamp])
+  @@map("sms_events")
+}
+
+model SmsConsent {
+  id             String    @id @default(cuid())
+  organizationId String    @map("organization_id")
+  profileId      String    @map("profile_id")
+  phone          String
+  consentGiven   Boolean   @default(false) @map("consent_given")
+  consentSource  String?   @map("consent_source") // api, form, sms_reply, import
+  consentedAt    DateTime? @map("consented_at")
+  optedOutAt     DateTime? @map("opted_out_at")
+  optOutSource   String?   @map("opt_out_source") // sms_reply, api, manual
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  profile      Profile      @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, phone])
+  @@unique([organizationId, profileId])
+  @@index([organizationId])
+  @@index([profileId])
+  @@index([phone])
+  @@index([consentGiven])
+  @@map("sms_consents")
 }

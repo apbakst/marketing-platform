@@ -21,8 +21,9 @@ export const config = {
     sendgrid: {
       apiKey: process.env.SENDGRID_API_KEY,
     },
-    mixmax: {
-      apiKey: process.env.MIXMAX_API_KEY,
+    postmark: {
+      serverToken: process.env.POSTMARK_SERVER_TOKEN,
+      messageStream: process.env.POSTMARK_MESSAGE_STREAM || 'outbound',
     },
   },
 

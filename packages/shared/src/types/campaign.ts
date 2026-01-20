@@ -17,6 +17,12 @@ export interface ABTestConfig {
   testDuration: number;
 }
 
+export interface SendTimeOptimizationConfig {
+  enabled: boolean;
+  maxDelayHours?: number;
+  fallbackHour?: number;
+}
+
 export interface Campaign {
   id: string;
   organizationId: string;
@@ -34,6 +40,7 @@ export interface Campaign {
   status: CampaignStatus;
   type: CampaignType;
   abTestConfig?: ABTestConfig;
+  sendTimeOptimization?: SendTimeOptimizationConfig;
   scheduledAt?: Date;
   sentAt?: Date;
   createdAt: Date;
@@ -54,6 +61,7 @@ export interface CreateCampaignInput {
   excludeSegmentIds?: string[];
   type?: CampaignType;
   abTestConfig?: ABTestConfig;
+  sendTimeOptimization?: SendTimeOptimizationConfig;
 }
 
 export interface UpdateCampaignInput {
@@ -69,6 +77,7 @@ export interface UpdateCampaignInput {
   segmentIds?: string[];
   excludeSegmentIds?: string[];
   abTestConfig?: ABTestConfig;
+  sendTimeOptimization?: SendTimeOptimizationConfig;
 }
 
 export interface CampaignStats {

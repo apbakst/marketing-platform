@@ -23,7 +23,7 @@ export class SegmentService {
         organizationId,
         name: input.name,
         description: input.description,
-        conditions: input.conditions as unknown as Prisma.JsonValue,
+        conditions: input.conditions as unknown as Prisma.InputJsonValue,
       },
     });
 
@@ -35,19 +35,20 @@ export class SegmentService {
     segmentId: string,
     input: UpdateSegmentInput
   ): Promise<Segment> {
+    const updateData: Prisma.SegmentUpdateInput = {};
+    if (input.name !== undefined) updateData.name = input.name;
+    if (input.description !== undefined) updateData.description = input.description;
+    if (input.conditions !== undefined) {
+      updateData.conditions = input.conditions as unknown as Prisma.InputJsonValue;
+    }
+    if (input.isActive !== undefined) updateData.isActive = input.isActive;
+
     const segment = await prisma.segment.update({
       where: {
         id: segmentId,
         organizationId,
       },
-      data: {
-        ...(input.name !== undefined && { name: input.name }),
-        ...(input.description !== undefined && { description: input.description }),
-        ...(input.conditions !== undefined && {
-          conditions: input.conditions as unknown as Prisma.JsonValue,
-        }),
-        ...(input.isActive !== undefined && { isActive: input.isActive }),
-      },
+      data: updateData,
     });
 
     await redis.del(CACHE_KEYS.SEGMENT(segmentId));
@@ -339,24 +340,25 @@ export class SegmentService {
   ): Prisma.ProfileWhereInput {
     // Use Prisma's JSON filtering
     const pathParts = path.split('.');
+    const jsonValue = value as Prisma.InputJsonValue;
 
     switch (operator) {
       case 'equals':
         return {
           properties: {
             path: pathParts,
-            equals: value,
+            equals: jsonValue,
           },
-        };
+        } as Prisma.ProfileWhereInput;
       case 'not_equals':
         return {
           NOT: {
             properties: {
               path: pathParts,
-              equals: value,
+              equals: jsonValue,
             },
           },
-        };
+        } as Prisma.ProfileWhereInput;
       case 'is_set':
         return {
           NOT: {
@@ -365,14 +367,14 @@ export class SegmentService {
               equals: Prisma.DbNull,
             },
           },
-        };
+        } as Prisma.ProfileWhereInput;
       case 'is_not_set':
         return {
           properties: {
             path: pathParts,
             equals: Prisma.DbNull,
           },
-        };
+        } as Prisma.ProfileWhereInput;
       default:
         return {};
     }

@@ -1,7 +1,8 @@
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
-interface RequestOptions extends RequestInit {
+interface RequestOptions extends Omit<RequestInit, 'headers'> {
   params?: Record<string, string | number | boolean | undefined>;
+  headers?: Record<string, string>;
 }
 
 class ApiClient {
@@ -34,7 +35,7 @@ class ApiClient {
       }
     }
 
-    const headers: HeadersInit = {
+    const headers: Record<string, string> = {
       'Content-Type': 'application/json',
       ...(options.headers || {}),
     };
@@ -257,6 +258,87 @@ class ApiClient {
         body: JSON.stringify(data),
       }
     );
+  }
+
+  // Flows
+  async getFlows(params?: { status?: string; limit?: number; cursor?: string }) {
+    return this.request<{
+      flows: any[];
+      nextCursor?: string;
+    }>('/api/v1/flows', { params });
+  }
+
+  async getFlow(id: string) {
+    return this.request<any>(`/api/v1/flows/${id}`);
+  }
+
+  async createFlow(data: {
+    name: string;
+    description?: string;
+    triggerType: string;
+    triggerConfig: any;
+    nodes?: any[];
+    edges?: any[];
+    settings?: Record<string, unknown>;
+  }) {
+    return this.request<any>('/api/v1/flows', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async updateFlow(id: string, data: Record<string, unknown>) {
+    return this.request<any>(`/api/v1/flows/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async deleteFlow(id: string) {
+    return this.request<void>(`/api/v1/flows/${id}`, {
+      method: 'DELETE',
+    });
+  }
+
+  async activateFlow(id: string) {
+    return this.request<any>(`/api/v1/flows/${id}/activate`, {
+      method: 'POST',
+    });
+  }
+
+  async pauseFlow(id: string) {
+    return this.request<any>(`/api/v1/flows/${id}/pause`, {
+      method: 'POST',
+    });
+  }
+
+  async getFlowStats(id: string) {
+    return this.request<any>(`/api/v1/flows/${id}/stats`);
+  }
+
+  // Generic methods
+  async get<T = any>(endpoint: string, params?: Record<string, string | number | boolean | undefined>): Promise<T> {
+    return this.request<T>(`/api/v1${endpoint}`, { params });
+  }
+
+  async post<T = any>(endpoint: string, data?: any): Promise<T> {
+    return this.request<T>(`/api/v1${endpoint}`, {
+      method: 'POST',
+      body: data ? JSON.stringify(data) : undefined,
+    });
+  }
+
+  async patch<T = any>(endpoint: string, data?: any): Promise<T> {
+    return this.request<T>(`/api/v1${endpoint}`, {
+      method: 'PATCH',
+      body: data ? JSON.stringify(data) : undefined,
+    });
+  }
+
+  async delete(endpoint: string): Promise<void> {
+    return this.request<void>(`/api/v1${endpoint}`, {
+      method: 'DELETE',
+    });
   }
 }
 

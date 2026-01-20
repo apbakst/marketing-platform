@@ -12,6 +12,17 @@ import { profileRoutes } from './routes/profiles.js';
 import { trackingRoutes } from './routes/tracking.js';
 import { segmentRoutes } from './routes/segments.js';
 import { campaignRoutes } from './routes/campaigns.js';
+import { templateRoutes } from './routes/templates.js';
+import { trackingEventsRoutes } from './routes/tracking-events.js';
+import { webhookRoutes } from './routes/webhooks.js';
+import { suppressionRoutes } from './routes/suppressions.js';
+import { analyticsRoutes } from './routes/analytics.js';
+import { flowRoutes } from './routes/flows.js';
+import { sendTimeRoutes } from './routes/send-time.js';
+import { rateLimitRoutes } from './routes/rate-limit.js';
+import { organizationRateLimitHook } from './middleware/rate-limit.js';
+import { smsRoutes } from './routes/sms.js';
+import { smsWebhookRoutes } from './routes/sms-webhooks.js';
 
 const fastify = Fastify({
   logger: {
@@ -46,6 +57,10 @@ await fastify.register(rateLimit, {
 });
 
 await fastify.register(sensible);
+
+// Add organization-based rate limiting hook for API routes
+// This runs after auth middleware populates request.auth
+fastify.addHook('preHandler', organizationRateLimitHook);
 
 await fastify.register(swagger, {
   openapi: {
@@ -85,10 +100,11 @@ await fastify.register(swaggerUi, {
 fastify.setErrorHandler((error, request, reply) => {
   // Zod validation errors
   if (error.name === 'ZodError') {
+    const zodError = error as unknown as { issues: unknown[] };
     return reply.status(400).send({
       error: 'Validation Error',
       message: 'Invalid request data',
-      details: error.issues,
+      details: zodError.issues,
     });
   }
 
@@ -129,10 +145,20 @@ fastify.setErrorHandler((error, request, reply) => {
 
 // Register routes
 await fastify.register(healthRoutes);
+await fastify.register(trackingEventsRoutes); // No prefix - uses /t/o, /t/c, /unsubscribe
 await fastify.register(trackingRoutes, { prefix: '/api/v1' });
 await fastify.register(profileRoutes, { prefix: '/api/v1/profiles' });
 await fastify.register(segmentRoutes, { prefix: '/api/v1/segments' });
 await fastify.register(campaignRoutes, { prefix: '/api/v1/campaigns' });
+await fastify.register(templateRoutes, { prefix: '/api/v1/templates' });
+await fastify.register(webhookRoutes); // No prefix - uses /webhooks/*
+await fastify.register(suppressionRoutes, { prefix: '/api/v1/suppressions' });
+await fastify.register(analyticsRoutes, { prefix: '/api/v1/analytics' });
+await fastify.register(flowRoutes, { prefix: '/api/v1/flows' });
+await fastify.register(sendTimeRoutes, { prefix: '/api/v1/send-time' });
+await fastify.register(rateLimitRoutes, { prefix: '/api/v1/rate-limit' });
+await fastify.register(smsRoutes, { prefix: '/api/v1/sms' });
+await fastify.register(smsWebhookRoutes); // No prefix - uses /webhooks/*
 
 // Graceful shutdown
 const signals: NodeJS.Signals[] = ['SIGINT', 'SIGTERM'];

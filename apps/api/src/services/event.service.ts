@@ -1,4 +1,4 @@
-import { prisma, Event } from '@marketing-platform/database';
+import { prisma, Prisma, Event } from '@marketing-platform/database';
 import {
   TrackEventInput,
   IdentifyInput,
@@ -7,6 +7,7 @@ import {
   sanitizeEmail,
 } from '@marketing-platform/shared';
 import { profileService } from './profile.service.js';
+import { realtimeSegmentService } from './realtime-segment.service.js';
 
 export class EventService {
   async track(
@@ -37,10 +38,20 @@ export class EventService {
         organizationId,
         profileId,
         name: input.name,
-        properties,
+        properties: properties as Prisma.InputJsonValue,
         timestamp,
         source,
       },
+    });
+
+    // Real-time segment evaluation for events
+    // Run asynchronously to not block the response
+    realtimeSegmentService.evaluateSegmentsForEvent(
+      profileId,
+      organizationId,
+      input.name
+    ).catch(err => {
+      console.error('[RealtimeSegment] Error evaluating segments for event:', err);
     });
 
     return event;
@@ -93,6 +104,15 @@ export class EventService {
         properties: input.properties,
       }
     );
+
+    // Real-time segment evaluation for profile changes
+    // Run asynchronously to not block the response
+    realtimeSegmentService.evaluateProfileSegments(
+      profile.id,
+      organizationId
+    ).catch(err => {
+      console.error('[RealtimeSegment] Error evaluating segments for profile:', err);
+    });
 
     return { profileId: profile.id, created };
   }

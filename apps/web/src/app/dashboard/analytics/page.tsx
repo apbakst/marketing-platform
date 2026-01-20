@@ -1,5 +1,6 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import {
   Card,
   CardContent,
@@ -7,65 +8,211 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { Mail, MousePointer, AlertTriangle, TrendingUp } from 'lucide-react';
+import { Mail, MousePointer, AlertTriangle, TrendingUp, BarChart3, Users, GitBranch } from 'lucide-react';
+import { api } from '@/lib/api';
+import {
+  AreaChart,
+  Area,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  Legend,
+} from 'recharts';
 
-const overviewStats = [
-  {
-    name: 'Emails Sent',
-    value: '45,231',
-    change: '+8.2%',
-    changeType: 'positive',
-    icon: Mail,
-  },
-  {
-    name: 'Avg. Open Rate',
-    value: '38.5%',
-    change: '+2.1%',
-    changeType: 'positive',
-    icon: TrendingUp,
-  },
-  {
-    name: 'Avg. Click Rate',
-    value: '6.8%',
-    change: '-0.3%',
-    changeType: 'negative',
-    icon: MousePointer,
-  },
-  {
-    name: 'Bounce Rate',
-    value: '1.2%',
-    change: '-0.5%',
-    changeType: 'positive',
-    icon: AlertTriangle,
-  },
-];
+interface OverviewMetric {
+  value: number;
+  change: number;
+}
 
-const emailPerformance = [
-  { date: 'Jan 8', sent: 1200, opened: 450, clicked: 82 },
-  { date: 'Jan 9', sent: 980, opened: 380, clicked: 65 },
-  { date: 'Jan 10', sent: 1500, opened: 590, clicked: 105 },
-  { date: 'Jan 11', sent: 1100, opened: 420, clicked: 78 },
-  { date: 'Jan 12', sent: 1350, opened: 510, clicked: 92 },
-  { date: 'Jan 13', sent: 890, opened: 340, clicked: 58 },
-  { date: 'Jan 14', sent: 1450, opened: 560, clicked: 98 },
-];
+interface Overview {
+  metrics: {
+    emailsSent: OverviewMetric;
+    openRate: OverviewMetric;
+    clickRate: OverviewMetric;
+    bounceRate: OverviewMetric;
+  };
+}
 
-const topCampaigns = [
-  { name: 'Welcome Series - Day 1', openRate: 52, clickRate: 12.3 },
-  { name: 'Product Launch', openRate: 48, clickRate: 9.8 },
-  { name: 'Flash Sale Alert', openRate: 45, clickRate: 15.2 },
-  { name: 'Monthly Newsletter', openRate: 38, clickRate: 5.6 },
-  { name: 'Re-engagement', openRate: 32, clickRate: 4.2 },
-];
+interface DailyStat {
+  date: string;
+  sent: number;
+  delivered: number;
+  bounced: number;
+}
+
+interface HourlyStat {
+  hour: number;
+  opens: number;
+  clicks: number;
+}
+
+interface CampaignPerformance {
+  id: string;
+  name: string;
+  sentAt: string;
+  totalRecipients: number;
+  sent: number;
+  delivered: number;
+  opens: number;
+  clicks: number;
+  rates: {
+    delivery: number;
+    open: number;
+    click: number;
+    bounce: number;
+  };
+}
+
+interface FlowPerformance {
+  id: string;
+  name: string;
+  status: string;
+  enrolled: number;
+  active: number;
+  completed: number;
+  emailsSent: number;
+  opens: number;
+  clicks: number;
+  rates: {
+    completion: number;
+    open: number;
+    click: number;
+  };
+}
+
+interface DeliverabilityData {
+  sends: {
+    total: number;
+    delivered: number;
+    bounced: number;
+    complained: number;
+    failed: number;
+  };
+  rates: {
+    deliveryRate: number;
+    bounceRate: number;
+    complaintRate: number;
+    openRate: number;
+    clickRate: number;
+  };
+}
 
 export default function AnalyticsPage() {
+  const [overview, setOverview] = useState<Overview | null>(null);
+  const [dailyStats, setDailyStats] = useState<DailyStat[]>([]);
+  const [hourlyStats, setHourlyStats] = useState<HourlyStat[]>([]);
+  const [campaigns, setCampaigns] = useState<CampaignPerformance[]>([]);
+  const [flows, setFlows] = useState<FlowPerformance[]>([]);
+  const [deliverability, setDeliverability] = useState<DeliverabilityData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [days, setDays] = useState(30);
+
+  useEffect(() => {
+    loadData();
+  }, [days]);
+
+  async function loadData() {
+    setLoading(true);
+    try {
+      const [overviewRes, dailyRes, hourlyRes, campaignsRes, flowsRes, delivRes] = await Promise.all([
+        api.get<Overview>('/api/v1/analytics/overview', { days }),
+        api.get<DailyStat[]>('/api/v1/analytics/sends/daily', { days: 7 }),
+        api.get<HourlyStat[]>('/api/v1/analytics/engagement/hourly', { days }),
+        api.get<CampaignPerformance[]>('/api/v1/analytics/campaigns/performance', { limit: 5 }),
+        api.get<FlowPerformance[]>('/api/v1/analytics/flows/performance'),
+        api.get<DeliverabilityData>('/api/v1/analytics/deliverability', { days }),
+      ]);
+
+      setOverview(overviewRes);
+      setDailyStats(dailyRes || []);
+      setHourlyStats(hourlyRes || []);
+      setCampaigns(campaignsRes || []);
+      setFlows(flowsRes || []);
+      setDeliverability(delivRes);
+    } catch (error) {
+      console.error('Error loading analytics:', error);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  const formatNumber = (num: number): string => {
+    if (num >= 1000000) return `${(num / 1000000).toFixed(1)}M`;
+    if (num >= 1000) return `${(num / 1000).toFixed(1)}K`;
+    return num.toLocaleString();
+  };
+
+  const formatPercent = (num: number): string => {
+    return `${num.toFixed(1)}%`;
+  };
+
+  const formatChange = (change: number, inverse: boolean = false): { text: string; type: 'positive' | 'negative' | 'neutral' } => {
+    if (Math.abs(change) < 0.1) return { text: '0%', type: 'neutral' };
+    const isPositive = inverse ? change < 0 : change > 0;
+    return {
+      text: `${change > 0 ? '+' : ''}${change.toFixed(1)}%`,
+      type: isPositive ? 'positive' : 'negative',
+    };
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-muted-foreground">Loading analytics...</div>
+      </div>
+    );
+  }
+
+  const overviewStats = overview ? [
+    {
+      name: 'Emails Sent',
+      value: formatNumber(overview.metrics.emailsSent.value),
+      change: formatChange(overview.metrics.emailsSent.change),
+      icon: Mail,
+    },
+    {
+      name: 'Avg. Open Rate',
+      value: formatPercent(overview.metrics.openRate.value),
+      change: formatChange(overview.metrics.openRate.change),
+      icon: TrendingUp,
+    },
+    {
+      name: 'Avg. Click Rate',
+      value: formatPercent(overview.metrics.clickRate.value),
+      change: formatChange(overview.metrics.clickRate.change),
+      icon: MousePointer,
+    },
+    {
+      name: 'Bounce Rate',
+      value: formatPercent(overview.metrics.bounceRate.value),
+      change: formatChange(overview.metrics.bounceRate.change, true),
+      icon: AlertTriangle,
+    },
+  ] : [];
+
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold">Analytics</h1>
-        <p className="text-muted-foreground">
-          Track your email marketing performance
-        </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold">Analytics</h1>
+          <p className="text-muted-foreground">
+            Track your email marketing performance
+          </p>
+        </div>
+        <select
+          value={days}
+          onChange={(e) => setDays(Number(e.target.value))}
+          className="rounded-md border border-input bg-background px-3 py-2 text-sm"
+        >
+          <option value={7}>Last 7 days</option>
+          <option value={30}>Last 30 days</option>
+          <option value={60}>Last 60 days</option>
+          <option value={90}>Last 90 days</option>
+        </select>
       </div>
 
       {/* Overview Stats */}
@@ -80,12 +227,14 @@ export default function AnalyticsPage() {
               <div className="text-2xl font-bold">{stat.value}</div>
               <p
                 className={`text-xs ${
-                  stat.changeType === 'positive'
+                  stat.change.type === 'positive'
                     ? 'text-green-600'
-                    : 'text-red-600'
+                    : stat.change.type === 'negative'
+                    ? 'text-red-600'
+                    : 'text-muted-foreground'
                 }`}
               >
-                {stat.change} from last period
+                {stat.change.text} from last period
               </p>
             </CardContent>
           </Card>
@@ -93,98 +242,217 @@ export default function AnalyticsPage() {
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
-        {/* Email Performance Chart Placeholder */}
+        {/* Email Performance Chart */}
         <Card>
           <CardHeader>
-            <CardTitle>Email Performance</CardTitle>
+            <CardTitle className="flex items-center gap-2">
+              <BarChart3 className="h-5 w-5" />
+              Email Performance
+            </CardTitle>
             <CardDescription>Daily email metrics over the last 7 days</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="h-[300px] flex items-center justify-center text-muted-foreground">
-              <div className="text-center">
-                <p>Chart visualization would go here</p>
-                <p className="text-sm">(Using recharts library)</p>
+            {dailyStats.length > 0 ? (
+              <ResponsiveContainer width="100%" height={300}>
+                <AreaChart data={dailyStats}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis
+                    dataKey="date"
+                    tickFormatter={(value) => new Date(value).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                  />
+                  <YAxis />
+                  <Tooltip
+                    labelFormatter={(value) => new Date(value).toLocaleDateString()}
+                  />
+                  <Legend />
+                  <Area
+                    type="monotone"
+                    dataKey="sent"
+                    stackId="1"
+                    stroke="#8884d8"
+                    fill="#8884d8"
+                    name="Sent"
+                  />
+                  <Area
+                    type="monotone"
+                    dataKey="delivered"
+                    stackId="2"
+                    stroke="#82ca9d"
+                    fill="#82ca9d"
+                    name="Delivered"
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="h-[300px] flex items-center justify-center text-muted-foreground">
+                No data available
               </div>
-            </div>
-            <div className="mt-4 space-y-2">
-              {emailPerformance.map((day) => (
-                <div
-                  key={day.date}
-                  className="flex items-center justify-between text-sm"
-                >
-                  <span className="text-muted-foreground">{day.date}</span>
-                  <div className="flex gap-4">
-                    <span>Sent: {day.sent}</span>
-                    <span>Opened: {day.opened}</span>
-                    <span>Clicked: {day.clicked}</span>
-                  </div>
-                </div>
-              ))}
-            </div>
+            )}
           </CardContent>
         </Card>
 
+        {/* Hourly Engagement Chart */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <TrendingUp className="h-5 w-5" />
+              Engagement by Hour
+            </CardTitle>
+            <CardDescription>When your audience is most engaged</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {hourlyStats.length > 0 ? (
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart data={hourlyStats}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis
+                    dataKey="hour"
+                    tickFormatter={(value) => `${value}:00`}
+                  />
+                  <YAxis />
+                  <Tooltip
+                    labelFormatter={(value) => `${value}:00 - ${value}:59`}
+                  />
+                  <Legend />
+                  <Bar dataKey="opens" fill="#8884d8" name="Opens" />
+                  <Bar dataKey="clicks" fill="#82ca9d" name="Clicks" />
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="h-[300px] flex items-center justify-center text-muted-foreground">
+                No data available
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="grid gap-6 lg:grid-cols-2">
         {/* Top Performing Campaigns */}
         <Card>
           <CardHeader>
-            <CardTitle>Top Performing Campaigns</CardTitle>
+            <CardTitle className="flex items-center gap-2">
+              <Mail className="h-5 w-5" />
+              Top Performing Campaigns
+            </CardTitle>
             <CardDescription>Campaigns with highest engagement rates</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              {topCampaigns.map((campaign, index) => (
-                <div
-                  key={campaign.name}
-                  className="flex items-center justify-between"
-                >
-                  <div className="flex items-center gap-3">
-                    <span className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-sm font-medium text-primary">
-                      {index + 1}
-                    </span>
-                    <span className="font-medium">{campaign.name}</span>
+            {campaigns.length > 0 ? (
+              <div className="space-y-4">
+                {campaigns.map((campaign, index) => (
+                  <div
+                    key={campaign.id}
+                    className="flex items-center justify-between"
+                  >
+                    <div className="flex items-center gap-3">
+                      <span className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-sm font-medium text-primary">
+                        {index + 1}
+                      </span>
+                      <span className="font-medium truncate max-w-[200px]">{campaign.name}</span>
+                    </div>
+                    <div className="flex gap-4 text-sm">
+                      <span className="text-muted-foreground">
+                        Open: <span className="text-foreground">{campaign.rates.open.toFixed(1)}%</span>
+                      </span>
+                      <span className="text-muted-foreground">
+                        Click: <span className="text-foreground">{campaign.rates.click.toFixed(1)}%</span>
+                      </span>
+                    </div>
                   </div>
-                  <div className="flex gap-4 text-sm">
-                    <span className="text-muted-foreground">
-                      Open: <span className="text-foreground">{campaign.openRate}%</span>
-                    </span>
-                    <span className="text-muted-foreground">
-                      Click: <span className="text-foreground">{campaign.clickRate}%</span>
-                    </span>
+                ))}
+              </div>
+            ) : (
+              <div className="py-8 text-center text-muted-foreground">
+                No campaigns sent yet
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Flow Performance */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <GitBranch className="h-5 w-5" />
+              Flow Performance
+            </CardTitle>
+            <CardDescription>Automation flow statistics</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {flows.length > 0 ? (
+              <div className="space-y-4">
+                {flows.map((flow) => (
+                  <div
+                    key={flow.id}
+                    className="flex items-center justify-between border-b pb-3 last:border-0"
+                  >
+                    <div>
+                      <p className="font-medium">{flow.name}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {flow.enrolled} enrolled · {flow.active} active
+                      </p>
+                    </div>
+                    <div className="flex gap-4 text-sm">
+                      <span className="text-muted-foreground">
+                        Completion: <span className="text-foreground">{flow.rates.completion.toFixed(1)}%</span>
+                      </span>
+                      <span className={`px-2 py-0.5 rounded text-xs ${
+                        flow.status === 'active' ? 'bg-green-100 text-green-800' :
+                        flow.status === 'paused' ? 'bg-yellow-100 text-yellow-800' :
+                        'bg-gray-100 text-gray-800'
+                      }`}>
+                        {flow.status}
+                      </span>
+                    </div>
                   </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            ) : (
+              <div className="py-8 text-center text-muted-foreground">
+                No flows created yet
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
 
       {/* Deliverability */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Deliverability Overview</CardTitle>
-          <CardDescription>Monitor your email delivery health</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="grid gap-4 md:grid-cols-4">
-            <div className="rounded-lg bg-green-50 p-4">
-              <p className="text-sm font-medium text-green-800">Delivered</p>
-              <p className="text-2xl font-bold text-green-900">98.2%</p>
+      {deliverability && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Users className="h-5 w-5" />
+              Deliverability Overview
+            </CardTitle>
+            <CardDescription>Monitor your email delivery health</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid gap-4 md:grid-cols-5">
+              <div className="rounded-lg bg-blue-50 p-4">
+                <p className="text-sm font-medium text-blue-800">Total Sent</p>
+                <p className="text-2xl font-bold text-blue-900">{formatNumber(deliverability.sends.total)}</p>
+              </div>
+              <div className="rounded-lg bg-green-50 p-4">
+                <p className="text-sm font-medium text-green-800">Delivered</p>
+                <p className="text-2xl font-bold text-green-900">{formatPercent(deliverability.rates.deliveryRate)}</p>
+              </div>
+              <div className="rounded-lg bg-yellow-50 p-4">
+                <p className="text-sm font-medium text-yellow-800">Open Rate</p>
+                <p className="text-2xl font-bold text-yellow-900">{formatPercent(deliverability.rates.openRate)}</p>
+              </div>
+              <div className="rounded-lg bg-red-50 p-4">
+                <p className="text-sm font-medium text-red-800">Bounces</p>
+                <p className="text-2xl font-bold text-red-900">{formatPercent(deliverability.rates.bounceRate)}</p>
+              </div>
+              <div className="rounded-lg bg-purple-50 p-4">
+                <p className="text-sm font-medium text-purple-800">Complaints</p>
+                <p className="text-2xl font-bold text-purple-900">{formatPercent(deliverability.rates.complaintRate)}</p>
+              </div>
             </div>
-            <div className="rounded-lg bg-yellow-50 p-4">
-              <p className="text-sm font-medium text-yellow-800">Soft Bounces</p>
-              <p className="text-2xl font-bold text-yellow-900">0.8%</p>
-            </div>
-            <div className="rounded-lg bg-red-50 p-4">
-              <p className="text-sm font-medium text-red-800">Hard Bounces</p>
-              <p className="text-2xl font-bold text-red-900">0.4%</p>
-            </div>
-            <div className="rounded-lg bg-purple-50 p-4">
-              <p className="text-sm font-medium text-purple-800">Complaints</p>
-              <p className="text-2xl font-bold text-purple-900">0.02%</p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }

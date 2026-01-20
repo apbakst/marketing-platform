@@ -10,6 +10,8 @@ import {
   BarChart3,
   Settings,
   Home,
+  FileCode,
+  Ban,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -18,8 +20,10 @@ const navigation = [
   { name: 'Profiles', href: '/dashboard/profiles', icon: Users },
   { name: 'Segments', href: '/dashboard/segments', icon: Tags },
   { name: 'Campaigns', href: '/dashboard/campaigns', icon: Send },
+  { name: 'Templates', href: '/dashboard/templates', icon: FileCode },
   { name: 'Flows', href: '/dashboard/flows', icon: GitBranch },
   { name: 'Analytics', href: '/dashboard/analytics', icon: BarChart3 },
+  { name: 'Suppressions', href: '/dashboard/suppressions', icon: Ban },
   { name: 'Settings', href: '/dashboard/settings', icon: Settings },
 ];
 
