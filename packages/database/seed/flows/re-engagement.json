@@ -1,0 +1,326 @@
+{
+  "name": "Re-engagement Campaign",
+  "description": "Win back inactive subscribers who haven't engaged in 30+ days",
+  "status": "draft",
+  "nodes": [
+    {
+      "id": "trigger-1",
+      "type": "trigger",
+      "name": "Inactive User Trigger",
+      "position": { "x": 250, "y": 50 },
+      "trigger": {
+        "type": "segment_entry",
+        "segmentId": "inactive_30_days",
+        "filters": {
+          "operator": "and",
+          "conditions": [
+            {
+              "type": "property",
+              "field": "subscriptionStatus",
+              "operator": "equals",
+              "value": "subscribed"
+            },
+            {
+              "type": "event",
+              "eventName": "Email Opened",
+              "timeframe": {
+                "value": 30,
+                "unit": "days"
+              },
+              "operator": "exactly",
+              "count": 0
+            },
+            {
+              "type": "event",
+              "eventName": "Email Clicked",
+              "timeframe": {
+                "value": 30,
+                "unit": "days"
+              },
+              "operator": "exactly",
+              "count": 0
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "condition-vip",
+      "type": "condition",
+      "name": "Check VIP Status",
+      "position": { "x": 250, "y": 150 },
+      "conditions": {
+        "operator": "or",
+        "conditions": [
+          {
+            "type": "property",
+            "field": "properties.lifetime_value",
+            "operator": "greaterThan",
+            "value": 500
+          },
+          {
+            "type": "property",
+            "field": "properties.total_orders",
+            "operator": "greaterThan",
+            "value": 5
+          }
+        ]
+      }
+    },
+    {
+      "id": "email-vip-1",
+      "type": "email",
+      "name": "VIP Re-engagement",
+      "position": { "x": 100, "y": 250 },
+      "subject": "We miss you, {{profile.firstName}}! Here's something special 💎",
+      "previewText": "As one of our valued VIP customers, we have an exclusive offer for you",
+      "templateId": "reengagement_vip"
+    },
+    {
+      "id": "email-standard-1",
+      "type": "email",
+      "name": "Standard Re-engagement",
+      "position": { "x": 400, "y": 250 },
+      "subject": "It's been a while, {{profile.firstName}}!",
+      "previewText": "We've got some updates we think you'll love",
+      "templateId": "reengagement_standard"
+    },
+    {
+      "id": "delay-1",
+      "type": "delay",
+      "name": "Wait 5 Days",
+      "position": { "x": 250, "y": 350 },
+      "delayValue": 5,
+      "delayUnit": "days"
+    },
+    {
+      "id": "condition-engaged-1",
+      "type": "condition",
+      "name": "Check Engagement",
+      "position": { "x": 250, "y": 450 },
+      "conditions": {
+        "operator": "or",
+        "conditions": [
+          {
+            "type": "event",
+            "eventName": "Email Opened",
+            "timeframe": {
+              "value": 5,
+              "unit": "days"
+            },
+            "operator": "atLeast",
+            "count": 1
+          },
+          {
+            "type": "event",
+            "eventName": "Email Clicked",
+            "timeframe": {
+              "value": 5,
+              "unit": "days"
+            },
+            "operator": "atLeast",
+            "count": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "update-engaged",
+      "type": "update_profile",
+      "name": "Mark Re-engaged",
+      "position": { "x": 100, "y": 550 },
+      "updates": [
+        {
+          "field": "properties.reengaged_at",
+          "value": "{{now}}"
+        },
+        {
+          "field": "properties.engagement_status",
+          "value": "re-engaged"
+        }
+      ]
+    },
+    {
+      "id": "email-2",
+      "type": "email",
+      "name": "Second Chance Email",
+      "position": { "x": 400, "y": 550 },
+      "subject": "Last chance to stay connected 📬",
+      "previewText": "We want to keep sending you great content, but only if you want it",
+      "templateId": "reengagement_last_chance"
+    },
+    {
+      "id": "delay-2",
+      "type": "delay",
+      "name": "Wait 7 Days",
+      "position": { "x": 400, "y": 650 },
+      "delayValue": 7,
+      "delayUnit": "days"
+    },
+    {
+      "id": "condition-engaged-2",
+      "type": "condition",
+      "name": "Final Engagement Check",
+      "position": { "x": 400, "y": 750 },
+      "conditions": {
+        "operator": "or",
+        "conditions": [
+          {
+            "type": "event",
+            "eventName": "Email Opened",
+            "timeframe": {
+              "value": 7,
+              "unit": "days"
+            },
+            "operator": "atLeast",
+            "count": 1
+          },
+          {
+            "type": "event",
+            "eventName": "Email Clicked",
+            "timeframe": {
+              "value": 7,
+              "unit": "days"
+            },
+            "operator": "atLeast",
+            "count": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "update-win-back",
+      "type": "update_profile",
+      "name": "Mark Won Back",
+      "position": { "x": 250, "y": 850 },
+      "updates": [
+        {
+          "field": "properties.reengaged_at",
+          "value": "{{now}}"
+        },
+        {
+          "field": "properties.engagement_status",
+          "value": "won-back"
+        }
+      ]
+    },
+    {
+      "id": "email-sunset",
+      "type": "email",
+      "name": "Sunset Email",
+      "position": { "x": 550, "y": 850 },
+      "subject": "We're removing you from our list 👋",
+      "previewText": "We haven't heard from you, so we're unsubscribing you to keep your inbox clean",
+      "templateId": "reengagement_sunset"
+    },
+    {
+      "id": "update-sunset",
+      "type": "update_profile",
+      "name": "Mark for Sunset",
+      "position": { "x": 550, "y": 950 },
+      "updates": [
+        {
+          "field": "properties.sunset_at",
+          "value": "{{now}}"
+        },
+        {
+          "field": "properties.engagement_status",
+          "value": "sunset"
+        },
+        {
+          "field": "subscriptionStatus",
+          "value": "unsubscribed"
+        }
+      ]
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge-1",
+      "source": "trigger-1",
+      "target": "condition-vip"
+    },
+    {
+      "id": "edge-2",
+      "source": "condition-vip",
+      "target": "email-vip-1",
+      "sourceHandle": "yes",
+      "label": "VIP Customer"
+    },
+    {
+      "id": "edge-3",
+      "source": "condition-vip",
+      "target": "email-standard-1",
+      "sourceHandle": "no",
+      "label": "Standard Customer"
+    },
+    {
+      "id": "edge-4",
+      "source": "email-vip-1",
+      "target": "delay-1"
+    },
+    {
+      "id": "edge-5",
+      "source": "email-standard-1",
+      "target": "delay-1"
+    },
+    {
+      "id": "edge-6",
+      "source": "delay-1",
+      "target": "condition-engaged-1"
+    },
+    {
+      "id": "edge-7",
+      "source": "condition-engaged-1",
+      "target": "update-engaged",
+      "sourceHandle": "yes",
+      "label": "Engaged"
+    },
+    {
+      "id": "edge-8",
+      "source": "condition-engaged-1",
+      "target": "email-2",
+      "sourceHandle": "no",
+      "label": "Still Inactive"
+    },
+    {
+      "id": "edge-9",
+      "source": "email-2",
+      "target": "delay-2"
+    },
+    {
+      "id": "edge-10",
+      "source": "delay-2",
+      "target": "condition-engaged-2"
+    },
+    {
+      "id": "edge-11",
+      "source": "condition-engaged-2",
+      "target": "update-win-back",
+      "sourceHandle": "yes",
+      "label": "Engaged"
+    },
+    {
+      "id": "edge-12",
+      "source": "condition-engaged-2",
+      "target": "email-sunset",
+      "sourceHandle": "no",
+      "label": "Still Inactive"
+    },
+    {
+      "id": "edge-13",
+      "source": "email-sunset",
+      "target": "update-sunset"
+    }
+  ],
+  "settings": {
+    "exitOnConversion": true,
+    "conversionEvent": "Order Placed",
+    "goalEvent": "Email Opened",
+    "maxEnrollments": 1,
+    "enrollmentWindow": {
+      "value": 90,
+      "unit": "days"
+    }
+  }
+}

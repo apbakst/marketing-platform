@@ -1,0 +1,292 @@
+{
+  "name": "Abandoned Cart Recovery",
+  "description": "Multi-step flow to recover abandoned shopping carts with escalating incentives",
+  "status": "draft",
+  "nodes": [
+    {
+      "id": "trigger-1",
+      "type": "trigger",
+      "name": "Cart Abandoned Trigger",
+      "position": { "x": 250, "y": 50 },
+      "trigger": {
+        "type": "event",
+        "eventName": "Checkout Abandoned",
+        "filters": {
+          "operator": "and",
+          "conditions": [
+            {
+              "type": "property",
+              "field": "properties.cart_value",
+              "operator": "greaterThan",
+              "value": 0
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "delay-1",
+      "type": "delay",
+      "name": "Wait 1 Hour",
+      "position": { "x": 250, "y": 150 },
+      "delayValue": 1,
+      "delayUnit": "hours"
+    },
+    {
+      "id": "condition-purchased-1",
+      "type": "condition",
+      "name": "Check if Purchased",
+      "position": { "x": 250, "y": 250 },
+      "conditions": {
+        "operator": "and",
+        "conditions": [
+          {
+            "type": "event",
+            "eventName": "Order Placed",
+            "timeframe": {
+              "value": 1,
+              "unit": "hours"
+            },
+            "operator": "exactly",
+            "count": 0
+          }
+        ]
+      }
+    },
+    {
+      "id": "email-1",
+      "type": "email",
+      "name": "Reminder Email #1",
+      "position": { "x": 100, "y": 350 },
+      "subject": "You left something behind, {{profile.firstName}}!",
+      "previewText": "Your cart is waiting for you. Complete your purchase now.",
+      "templateId": "abandoned_cart_email_1"
+    },
+    {
+      "id": "delay-2",
+      "type": "delay",
+      "name": "Wait 24 Hours",
+      "position": { "x": 100, "y": 450 },
+      "delayValue": 24,
+      "delayUnit": "hours"
+    },
+    {
+      "id": "condition-purchased-2",
+      "type": "condition",
+      "name": "Check if Purchased",
+      "position": { "x": 100, "y": 550 },
+      "conditions": {
+        "operator": "and",
+        "conditions": [
+          {
+            "type": "event",
+            "eventName": "Order Placed",
+            "timeframe": {
+              "value": 24,
+              "unit": "hours"
+            },
+            "operator": "exactly",
+            "count": 0
+          }
+        ]
+      }
+    },
+    {
+      "id": "split-1",
+      "type": "split",
+      "name": "Cart Value Split",
+      "position": { "x": 100, "y": 650 },
+      "splitType": "conditional",
+      "branches": [
+        {
+          "id": "high-value",
+          "name": "High Value Cart ($100+)",
+          "conditions": {
+            "operator": "and",
+            "conditions": [
+              {
+                "type": "property",
+                "field": "properties.cart_value",
+                "operator": "greaterThanOrEqual",
+                "value": 100
+              }
+            ]
+          }
+        },
+        {
+          "id": "standard",
+          "name": "Standard Cart",
+          "conditions": {
+            "operator": "and",
+            "conditions": [
+              {
+                "type": "property",
+                "field": "properties.cart_value",
+                "operator": "lessThan",
+                "value": 100
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "email-2a",
+      "type": "email",
+      "name": "High Value - 15% Off",
+      "position": { "x": -50, "y": 750 },
+      "subject": "⚡ Special offer: 15% off your cart!",
+      "previewText": "Because you're special, here's an exclusive discount.",
+      "templateId": "abandoned_cart_high_value"
+    },
+    {
+      "id": "email-2b",
+      "type": "email",
+      "name": "Standard - Free Shipping",
+      "position": { "x": 200, "y": 750 },
+      "subject": "🚚 Free shipping on your order!",
+      "previewText": "Complete your purchase and get free shipping.",
+      "templateId": "abandoned_cart_free_shipping"
+    },
+    {
+      "id": "delay-3",
+      "type": "delay",
+      "name": "Wait 48 Hours",
+      "position": { "x": 100, "y": 850 },
+      "delayValue": 48,
+      "delayUnit": "hours"
+    },
+    {
+      "id": "condition-purchased-3",
+      "type": "condition",
+      "name": "Final Purchase Check",
+      "position": { "x": 100, "y": 950 },
+      "conditions": {
+        "operator": "and",
+        "conditions": [
+          {
+            "type": "event",
+            "eventName": "Order Placed",
+            "timeframe": {
+              "value": 72,
+              "unit": "hours"
+            },
+            "operator": "exactly",
+            "count": 0
+          }
+        ]
+      }
+    },
+    {
+      "id": "email-3",
+      "type": "email",
+      "name": "Final Reminder - Last Chance",
+      "position": { "x": 100, "y": 1050 },
+      "subject": "⏰ Last chance: Your cart expires soon!",
+      "previewText": "Items in your cart are selling fast. Don't miss out!",
+      "templateId": "abandoned_cart_final"
+    },
+    {
+      "id": "webhook-1",
+      "type": "webhook",
+      "name": "Notify Sales Team",
+      "position": { "x": 100, "y": 1150 },
+      "url": "{{organization.webhookUrl}}/high-value-abandoned",
+      "method": "POST",
+      "headers": {
+        "Content-Type": "application/json"
+      },
+      "body": {
+        "profileId": "{{profile.id}}",
+        "email": "{{profile.email}}",
+        "cartValue": "{{properties.cart_value}}",
+        "cartItems": "{{properties.cart_items}}"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge-1",
+      "source": "trigger-1",
+      "target": "delay-1"
+    },
+    {
+      "id": "edge-2",
+      "source": "delay-1",
+      "target": "condition-purchased-1"
+    },
+    {
+      "id": "edge-3",
+      "source": "condition-purchased-1",
+      "target": "email-1",
+      "sourceHandle": "yes",
+      "label": "Not Purchased"
+    },
+    {
+      "id": "edge-4",
+      "source": "email-1",
+      "target": "delay-2"
+    },
+    {
+      "id": "edge-5",
+      "source": "delay-2",
+      "target": "condition-purchased-2"
+    },
+    {
+      "id": "edge-6",
+      "source": "condition-purchased-2",
+      "target": "split-1",
+      "sourceHandle": "yes",
+      "label": "Not Purchased"
+    },
+    {
+      "id": "edge-7",
+      "source": "split-1",
+      "target": "email-2a",
+      "sourceHandle": "high-value"
+    },
+    {
+      "id": "edge-8",
+      "source": "split-1",
+      "target": "email-2b",
+      "sourceHandle": "standard"
+    },
+    {
+      "id": "edge-9",
+      "source": "email-2a",
+      "target": "delay-3"
+    },
+    {
+      "id": "edge-10",
+      "source": "email-2b",
+      "target": "delay-3"
+    },
+    {
+      "id": "edge-11",
+      "source": "delay-3",
+      "target": "condition-purchased-3"
+    },
+    {
+      "id": "edge-12",
+      "source": "condition-purchased-3",
+      "target": "email-3",
+      "sourceHandle": "yes",
+      "label": "Still Not Purchased"
+    },
+    {
+      "id": "edge-13",
+      "source": "email-3",
+      "target": "webhook-1"
+    }
+  ],
+  "settings": {
+    "exitOnConversion": true,
+    "conversionEvent": "Order Placed",
+    "goalEvent": "Order Placed",
+    "maxEnrollments": 1,
+    "enrollmentWindow": {
+      "value": 7,
+      "unit": "days"
+    }
+  }
+}

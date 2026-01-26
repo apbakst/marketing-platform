@@ -4,6 +4,7 @@ import {
   SESProvider,
   SendGridProvider,
   PostmarkProvider,
+  KlaviyoProvider,
   EmailMessage,
   SendResult,
 } from '../providers/index.js';
@@ -67,6 +68,13 @@ export class EmailRouter {
         return new PostmarkProvider({
           serverToken: (providerConfig.serverToken as string) || config.email.postmark?.serverToken || '',
           messageStream: (providerConfig.messageStream as string) || config.email.postmark?.messageStream,
+        });
+
+      case 'klaviyo':
+        return new KlaviyoProvider({
+          apiKey: (providerConfig.apiKey as string) || config.email.klaviyo?.apiKey || '',
+          revision: (providerConfig.revision as string) || config.email.klaviyo?.revision,
+          baseUrl: (providerConfig.baseUrl as string) || config.email.klaviyo?.baseUrl,
         });
 
       default:

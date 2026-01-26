@@ -25,6 +25,11 @@ export const config = {
       serverToken: process.env.POSTMARK_SERVER_TOKEN,
       messageStream: process.env.POSTMARK_MESSAGE_STREAM || 'outbound',
     },
+    klaviyo: {
+      apiKey: process.env.KLAVIYO_API_KEY,
+      revision: process.env.KLAVIYO_API_REVISION || '2024-02-15',
+      baseUrl: process.env.KLAVIYO_BASE_URL || 'https://a.klaviyo.com',
+    },
   },
 
   workers: {

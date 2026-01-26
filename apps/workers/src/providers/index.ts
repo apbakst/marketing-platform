@@ -6,4 +6,6 @@ export { SendGridProvider } from './sendgrid.js';
 export type { SendGridConfig } from './sendgrid.js';
 export { PostmarkProvider } from './postmark.js';
 export type { PostmarkConfig } from './postmark.js';
+export { KlaviyoProvider } from './klaviyo.js';
+export type { KlaviyoConfig } from './klaviyo.js';
 export { TwilioProvider } from './twilio.provider.js';

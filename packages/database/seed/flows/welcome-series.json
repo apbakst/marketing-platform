@@ -1,0 +1,176 @@
+{
+  "name": "Welcome Series",
+  "description": "A 3-email welcome sequence for new subscribers over 7 days",
+  "status": "draft",
+  "nodes": [
+    {
+      "id": "trigger-1",
+      "type": "trigger",
+      "name": "New Subscriber Trigger",
+      "position": { "x": 250, "y": 50 },
+      "trigger": {
+        "type": "event",
+        "eventName": "Subscribed to List",
+        "filters": {
+          "operator": "and",
+          "conditions": [
+            {
+              "type": "property",
+              "field": "properties.list_name",
+              "operator": "equals",
+              "value": "Newsletter"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "email-1",
+      "type": "email",
+      "name": "Welcome Email #1 - Introduction",
+      "position": { "x": 250, "y": 150 },
+      "subject": "Welcome to {{organization.name}}! 🎉",
+      "previewText": "We're so glad you're here. Here's what to expect...",
+      "templateId": "welcome_email_1"
+    },
+    {
+      "id": "delay-1",
+      "type": "delay",
+      "name": "Wait 2 Days",
+      "position": { "x": 250, "y": 250 },
+      "delayValue": 2,
+      "delayUnit": "days"
+    },
+    {
+      "id": "email-2",
+      "type": "email",
+      "name": "Welcome Email #2 - Best Features",
+      "position": { "x": 250, "y": 350 },
+      "subject": "Discover our top features, {{profile.firstName}}",
+      "previewText": "Get the most out of your experience with these tips",
+      "templateId": "welcome_email_2"
+    },
+    {
+      "id": "delay-2",
+      "type": "delay",
+      "name": "Wait 5 Days",
+      "position": { "x": 250, "y": 450 },
+      "delayValue": 5,
+      "delayUnit": "days"
+    },
+    {
+      "id": "condition-1",
+      "type": "condition",
+      "name": "Check Engagement",
+      "position": { "x": 250, "y": 550 },
+      "conditions": {
+        "operator": "and",
+        "conditions": [
+          {
+            "type": "event",
+            "eventName": "Email Opened",
+            "timeframe": {
+              "value": 7,
+              "unit": "days"
+            },
+            "operator": "atLeast",
+            "count": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "email-3a",
+      "type": "email",
+      "name": "Welcome Email #3 - Engaged Path",
+      "position": { "x": 100, "y": 650 },
+      "subject": "Ready for the next step? Here's an exclusive offer 🎁",
+      "previewText": "As a thank you for being an engaged subscriber...",
+      "templateId": "welcome_email_3_engaged"
+    },
+    {
+      "id": "email-3b",
+      "type": "email",
+      "name": "Welcome Email #3 - Re-engagement",
+      "position": { "x": 400, "y": 650 },
+      "subject": "Did you miss our emails, {{profile.firstName}}?",
+      "previewText": "We want to make sure you're getting value from us",
+      "templateId": "welcome_email_3_reengagement"
+    },
+    {
+      "id": "update-1",
+      "type": "update_profile",
+      "name": "Mark Welcome Complete",
+      "position": { "x": 250, "y": 750 },
+      "updates": [
+        {
+          "field": "properties.welcome_series_completed",
+          "value": true
+        },
+        {
+          "field": "properties.welcome_series_completed_at",
+          "value": "{{now}}"
+        }
+      ]
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge-1",
+      "source": "trigger-1",
+      "target": "email-1"
+    },
+    {
+      "id": "edge-2",
+      "source": "email-1",
+      "target": "delay-1"
+    },
+    {
+      "id": "edge-3",
+      "source": "delay-1",
+      "target": "email-2"
+    },
+    {
+      "id": "edge-4",
+      "source": "email-2",
+      "target": "delay-2"
+    },
+    {
+      "id": "edge-5",
+      "source": "delay-2",
+      "target": "condition-1"
+    },
+    {
+      "id": "edge-6",
+      "source": "condition-1",
+      "target": "email-3a",
+      "sourceHandle": "yes",
+      "label": "Engaged"
+    },
+    {
+      "id": "edge-7",
+      "source": "condition-1",
+      "target": "email-3b",
+      "sourceHandle": "no",
+      "label": "Not Engaged"
+    },
+    {
+      "id": "edge-8",
+      "source": "email-3a",
+      "target": "update-1"
+    },
+    {
+      "id": "edge-9",
+      "source": "email-3b",
+      "target": "update-1"
+    }
+  ],
+  "settings": {
+    "exitOnConversion": false,
+    "maxEnrollments": 1,
+    "enrollmentWindow": {
+      "value": 30,
+      "unit": "days"
+    }
+  }
+}

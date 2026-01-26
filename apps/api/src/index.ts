@@ -23,6 +23,7 @@ import { rateLimitRoutes } from './routes/rate-limit.js';
 import { organizationRateLimitHook } from './middleware/rate-limit.js';
 import { smsRoutes } from './routes/sms.js';
 import { smsWebhookRoutes } from './routes/sms-webhooks.js';
+import { shopifyWebhookRoutes } from './routes/shopify-webhooks.js';
 
 const fastify = Fastify({
   logger: {
@@ -159,6 +160,7 @@ await fastify.register(sendTimeRoutes, { prefix: '/api/v1/send-time' });
 await fastify.register(rateLimitRoutes, { prefix: '/api/v1/rate-limit' });
 await fastify.register(smsRoutes, { prefix: '/api/v1/sms' });
 await fastify.register(smsWebhookRoutes); // No prefix - uses /webhooks/*
+await fastify.register(shopifyWebhookRoutes); // No prefix - uses /webhooks/shopify/*
 
 // Graceful shutdown
 const signals: NodeJS.Signals[] = ['SIGINT', 'SIGTERM'];
