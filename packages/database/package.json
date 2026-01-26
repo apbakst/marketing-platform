@@ -17,7 +17,7 @@
     }
   },
   "scripts": {
-    "build": "prisma generate && tsc",
+    "build": "echo 'Starting prisma generate...' && npx prisma generate && echo 'Prisma generate complete. Listing generated folder:' && ls -la src/generated/client/ && echo 'Starting tsc...' && tsc",
     "dev": "tsc --watch",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
