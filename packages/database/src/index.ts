@@ -17,4 +17,4 @@ export type {
   EmailSend,
   EmailEvent,
   Suppression,
-} from '.prisma/client';
+} from './generated/client';
