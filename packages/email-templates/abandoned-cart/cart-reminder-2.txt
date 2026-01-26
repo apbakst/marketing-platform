@@ -1,0 +1,36 @@
+⏰ Your cart expires soon! Complete your order to save your items.
+
+Still Thinking It Over?
+=======================
+
+We want to help you decide...
+
+🎁 EXCLUSIVE OFFER: {{discountPercent}}% OFF
+Use code: {{discountCode}}
+Expires in 24 hours
+
+Hey {{firstName}}, your items are selling fast and we don't want you to miss out. Here's a special discount just for you:
+
+ITEMS IN YOUR CART
+------------------
+{{#each cartItems}}
+{{this.name}}
+Qty: {{this.quantity}} - {{this.price}}
+
+{{/each}}
+-------------------
+Subtotal: {{cartTotal}}
+With Code: {{discountedTotal}}
+
+→ Claim Your {{discountPercent}}% Off: {{cartUrl}}?code={{discountCode}}
+
+-------------------
+⭐⭐⭐⭐⭐
+"Finally found something that actually works. Wish I started sooner!"
+— Verified Customer
+
+---
+HairDAO - Decentralized Science for Hair Wellness
+
+Email Preferences: {{preferencesUrl}}
+Unsubscribe: {{unsubscribeUrl}}

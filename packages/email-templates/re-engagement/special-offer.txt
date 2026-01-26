@@ -1,0 +1,32 @@
+🔒 Exclusive Member Offer
+
+{{firstName}}, this one's for you
+
+{{discountPercent}}% Off Your Next Order
+========================================
+
+Your exclusive code:
+
+    {{discountCode}}
+
+Valid until {{expiryDate}} • Min. order {{minimumOrder}}
+
+We haven't seen you in a while, and we want to make your return extra special. Use this exclusive discount on any of our science-backed products.
+
+BESTSELLERS YOU'LL LOVE
+-----------------------
+{{#each featuredProducts}}
+• {{this.name}} - {{this.price}}
+{{/each}}
+
+→ Shop Now & Save: {{shopUrl}}?code={{discountCode}}
+
+-------------------
+✅ 30-Day Guarantee
+🚚 Free Shipping $50+
+
+---
+HairDAO - Decentralized Science for Hair Wellness
+
+Email Preferences: {{preferencesUrl}}
+Unsubscribe: {{unsubscribeUrl}}

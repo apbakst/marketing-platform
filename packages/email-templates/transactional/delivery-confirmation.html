@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="color-scheme" content="light dark">
+  <meta name="supported-color-schemes" content="light dark">
+  <title>Your Order Has Been Delivered - HairDAO</title>
+  <style>
+    :root { color-scheme: light dark; supported-color-schemes: light dark; }
+    body { margin: 0; padding: 0; width: 100%; background-color: #0a0a0a; }
+    table { border-spacing: 0; }
+    td { padding: 0; }
+    img { border: 0; display: block; }
+    .wrapper { width: 100%; table-layout: fixed; background-color: #0a0a0a; }
+    .main { max-width: 600px; background-color: #111111; margin: 0 auto; border-radius: 12px; overflow: hidden; }
+    @media (prefers-color-scheme: light) {
+      .wrapper { background-color: #f5f5f5 !important; }
+      .main { background-color: #ffffff !important; }
+      .dark-text { color: #1a1a1a !important; }
+      .muted-text { color: #525252 !important; }
+      .card-bg { background-color: #f9fafb !important; border-color: #e5e7eb !important; }
+    }
+    @media screen and (max-width: 600px) {
+      .mobile-full { width: 100% !important; }
+      .mobile-padding { padding-left: 20px !important; padding-right: 20px !important; }
+    }
+  </style>
+</head>
+<body style="margin: 0; padding: 0; background-color: #0a0a0a;">
+  <div class="wrapper" style="width: 100%; table-layout: fixed; background-color: #0a0a0a; padding: 40px 0;">
+    <table role="presentation" class="main" style="max-width: 600px; margin: 0 auto; background-color: #111111; border-radius: 12px; overflow: hidden;" width="600" cellpadding="0" cellspacing="0">
+      <!-- Header -->
+      <tr>
+        <td style="padding: 40px 40px 20px; text-align: center;">
+          <div style="width: 60px; height: 60px; background: linear-gradient(135deg, #047857 0%, #10b981 100%); border-radius: 50%; margin: 0 auto 20px; text-align: center; line-height: 60px; font-size: 28px;">🎉</div>
+          <h1 class="dark-text" style="margin: 0 0 10px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 28px; font-weight: 700; color: #e5e5e5;">
+            Your Order Has Arrived!
+          </h1>
+          <p class="muted-text" style="margin: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 14px; color: #737373;">
+            Order #{{orderNumber}} • Delivered {{deliveryDate}}
+          </p>
+        </td>
+      </tr>
+      
+      <!-- Main Content -->
+      <tr>
+        <td class="mobile-padding" style="padding: 20px 40px 40px;">
+          <p class="dark-text" style="margin: 0 0 25px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 16px; line-height: 1.6; color: #a3a3a3;">
+            Hey {{firstName}}, your HairDAO order has been delivered! We hope you love your new products.
+          </p>
+          
+          <!-- Delivery Confirmation Box -->
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-bottom: 25px;">
+            <tr>
+              <td class="card-bg" style="background-color: rgba(16, 185, 129, 0.1); border: 1px solid #10b981; border-radius: 12px; padding: 24px; text-align: center;">
+                <p style="margin: 0 0 5px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 14px; color: #10b981; font-weight: 500;">Delivered To</p>
+                <p class="dark-text" style="margin: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 16px; color: #e5e5e5;">
+                  {{shippingAddress.line1}}, {{shippingAddress.city}}
+                </p>
+              </td>
+            </tr>
+          </table>
+          
+          <!-- Order Items -->
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-bottom: 25px;">
+            <tr>
+              <td class="card-bg" style="background-color: #1a1a1a; border: 1px solid #262626; border-radius: 12px; padding: 20px;">
+                <h3 class="dark-text" style="margin: 0 0 15px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 12px; font-weight: 600; color: #737373; text-transform: uppercase; letter-spacing: 0.5px;">Your Order</h3>
+                {{#each orderItems}}
+                <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-bottom: 12px;">
+                  <tr>
+                    <td style="width: 60px; vertical-align: top;">
+                      <img src="{{this.imageUrl}}" alt="{{this.name}}" width="50" height="50" style="border-radius: 8px; background-color: #262626;">
+                    </td>
+                    <td style="vertical-align: top; padding-left: 12px;">
+                      <p class="dark-text" style="margin: 0 0 4px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 14px; font-weight: 500; color: #e5e5e5;">{{this.name}}</p>
+                      <p class="muted-text" style="margin: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 12px; color: #737373;">Qty: {{this.quantity}}</p>
+                    </td>
+                  </tr>
+                </table>
+                {{/each}}
+              </td>
+            </tr>
+          </table>
+          
+          <!-- Getting Started Tips -->
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-bottom: 25px;">
+            <tr>
+              <td class="card-bg" style="background-color: #1a1a1a; border: 1px solid #262626; border-radius: 12px; padding: 20px;">
+                <h3 class="dark-text" style="margin: 0 0 15px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 16px; font-weight: 600; color: #e5e5e5;">💡 Quick Start Tips</h3>
+                <ul class="muted-text" style="margin: 0; padding-left: 20px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 14px; line-height: 1.8; color: #a3a3a3;">
+                  <li>Consistency is key - use your products as directed</li>
+                  <li>Take progress photos every 2 weeks</li>
+                  <li>Join our Discord for community support</li>
+                  <li>Results typically visible in 3-6 months</li>
+                </ul>
+              </td>
+            </tr>
+          </table>
+          
+          <!-- Review Request -->
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-bottom: 25px;">
+            <tr>
+              <td style="text-align: center;">
+                <p class="dark-text" style="margin: 0 0 15px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 16px; color: #e5e5e5;">
+                  How's everything look? Let us know!
+                </p>
+                <table role="presentation" cellpadding="0" cellspacing="0" style="margin: 0 auto;">
+                  <tr>
+                    <td style="padding: 0 5px;">
+                      <a href="{{reviewUrl}}?rating=5" style="display: inline-block; padding: 10px 15px; background-color: #1a1a1a; border: 1px solid #262626; border-radius: 8px; font-size: 24px; text-decoration: none;">⭐</a>
+                    </td>
+                    <td style="padding: 0 5px;">
+                      <a href="{{reviewUrl}}?rating=5" style="display: inline-block; padding: 10px 15px; background-color: #1a1a1a; border: 1px solid #262626; border-radius: 8px; font-size: 24px; text-decoration: none;">⭐</a>
+                    </td>
+                    <td style="padding: 0 5px;">
+                      <a href="{{reviewUrl}}?rating=5" style="display: inline-block; padding: 10px 15px; background-color: #1a1a1a; border: 1px solid #262626; border-radius: 8px; font-size: 24px; text-decoration: none;">⭐</a>
+                    </td>
+                    <td style="padding: 0 5px;">
+                      <a href="{{reviewUrl}}?rating=5" style="display: inline-block; padding: 10px 15px; background-color: #1a1a1a; border: 1px solid #262626; border-radius: 8px; font-size: 24px; text-decoration: none;">⭐</a>
+                    </td>
+                    <td style="padding: 0 5px;">
+                      <a href="{{reviewUrl}}?rating=5" style="display: inline-block; padding: 10px 15px; background-color: #1a1a1a; border: 1px solid #262626; border-radius: 8px; font-size: 24px; text-decoration: none;">⭐</a>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+          </table>
+          
+          <!-- CTA Buttons -->
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+            <tr>
+              <td style="text-align: center;">
+                <table role="presentation" cellpadding="0" cellspacing="0" style="margin: 0 auto;">
+                  <tr>
+                    <td style="padding-right: 10px;">
+                      <a href="{{reviewUrl}}" style="display: inline-block; padding: 14px 24px; background: linear-gradient(135deg, #047857 0%, #10b981 100%); border-radius: 8px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 14px; font-weight: 600; color: #ffffff; text-decoration: none;">
+                        Leave a Review
+                      </a>
+                    </td>
+                    <td style="padding-left: 10px;">
+                      <a href="{{supportUrl}}" style="display: inline-block; padding: 14px 24px; background-color: transparent; border: 1px solid #262626; border-radius: 8px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 14px; font-weight: 600; color: #a3a3a3; text-decoration: none;">
+                        Get Help
+                      </a>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+          </table>
+          
+          <p class="muted-text" style="margin: 25px 0 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 13px; line-height: 1.6; color: #737373; text-align: center;">
+            Didn't receive your package? <a href="{{supportUrl}}" style="color: #10b981; text-decoration: underline;">Contact support</a>
+          </p>
+        </td>
+      </tr>
+      
+      <!-- Footer -->
+      <tr>
+        <td style="background-color: #0a0a0a; padding: 30px 40px; text-align: center; border-top: 1px solid #262626;">
+          <p style="margin: 0 0 10px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 14px; color: #10b981; font-weight: 600;">HairDAO</p>
+          <p style="margin: 0 0 15px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 12px; color: #737373;">Decentralized Science for Hair Wellness</p>
+          <p style="margin: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 11px; color: #525252;">
+            <a href="{{preferencesUrl}}" style="color: #737373; text-decoration: underline;">Email Preferences</a> · 
+            <a href="{{unsubscribeUrl}}" style="color: #737373; text-decoration: underline;">Unsubscribe</a>
+          </p>
+        </td>
+      </tr>
+    </table>
+  </div>
+</body>
+</html>

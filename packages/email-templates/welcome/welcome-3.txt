@@ -1,0 +1,36 @@
+Day 5 • You're Part of the Family
+Join Our Community 🌿
+================================
+
+Hey {{firstName}}, you've been with us for 5 days now! It's time to connect with thousands of others who share your commitment to hair wellness.
+
+COMMUNITY STATS
+---------------
+• 15K+ Members
+• 50+ Studies
+• 24/7 Support
+
+JOIN OUR DISCORD
+----------------
+Connect with researchers, share progress, and get real-time support.
+→ Join Now: {{discordInviteUrl}}
+
+📚 ESSENTIAL RESOURCES
+----------------------
+• Beginner's Guide: {{beginnerGuideUrl}}
+  Start your journey right
+
+• Research Hub: {{researchHubUrl}}
+  Explore the science
+
+• FAQ: {{faqUrl}}
+  Common questions
+
+• Blog: {{blogUrl}}
+  Latest updates
+
+---
+HairDAO - Decentralized Science for Hair Wellness
+
+Email Preferences: {{preferencesUrl}}
+Unsubscribe: {{unsubscribeUrl}}

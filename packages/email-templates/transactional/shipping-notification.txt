@@ -1,0 +1,35 @@
+Your Order Has Shipped! 📦
+==========================
+
+Order #{{orderNumber}}
+
+Great news, {{firstName}}! Your order is on its way. Here's how to track it:
+
+TRACKING INFORMATION
+--------------------
+Tracking Number: {{trackingNumber}}
+Carrier: {{carrier}}
+
+Estimated Delivery: {{estimatedDelivery}}
+
+→ Track Your Package: {{trackingUrl}}
+
+SHIPPING TO
+-----------
+{{shippingName}}
+{{shippingAddress.line1}}
+{{#if shippingAddress.line2}}{{shippingAddress.line2}}{{/if}}
+{{shippingAddress.city}}, {{shippingAddress.state}} {{shippingAddress.zip}}
+{{shippingAddress.country}}
+
+WHAT'S IN YOUR PACKAGE
+----------------------
+{{#each orderItems}}
+• {{this.name}} × {{this.quantity}}
+{{/each}}
+
+---
+HairDAO - Decentralized Science for Hair Wellness
+
+Email Preferences: {{preferencesUrl}}
+Unsubscribe: {{unsubscribeUrl}}

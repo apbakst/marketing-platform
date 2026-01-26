@@ -1,0 +1,29 @@
+Forget Something? 🛒
+====================
+
+Your cart is waiting for you
+
+Hey {{firstName}}, we noticed you left some items in your cart. No worries — we saved them for you!
+
+YOUR CART
+---------
+{{#each cartItems}}
+{{this.name}}
+Qty: {{this.quantity}} - {{this.price}}
+
+{{/each}}
+-------------------
+Cart Total: {{cartTotal}}
+
+→ Complete Your Order: {{cartUrl}}
+
+-------------------
+🔒 Secure Checkout
+🚚 Free Shipping $50+
+↩️ Easy Returns
+
+---
+HairDAO - Decentralized Science for Hair Wellness
+
+Email Preferences: {{preferencesUrl}}
+Unsubscribe: {{unsubscribeUrl}}

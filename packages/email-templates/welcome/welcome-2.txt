@@ -1,0 +1,24 @@
+Day 2 of Your Journey
+Let's Get You Started 🚀
+========================
+
+Hey {{firstName}}, ready to unlock the full power of HairDAO? Here's your quick-start guide to making the most of your membership.
+
+STEP 1: Complete Your Profile
+Tell us about your hair goals so we can personalize your experience and recommendations.
+
+STEP 2: Explore the Research Hub
+Dive into our library of peer-reviewed studies and cutting-edge research on hair wellness.
+
+STEP 3: Browse Our Products
+Check out our science-backed formulations designed for real results.
+
+→ Complete Your Profile: {{profileUrl}}
+
+In a few days, we'll invite you to join our community of like-minded individuals on the same journey. Stay tuned!
+
+---
+HairDAO - Decentralized Science for Hair Wellness
+
+Email Preferences: {{preferencesUrl}}
+Unsubscribe: {{unsubscribeUrl}}

@@ -1,0 +1,43 @@
+Order Confirmed! ✓
+==================
+
+Order #{{orderNumber}}
+
+Thanks {{firstName}}! We've received your order and are getting it ready. You'll receive another email when it ships.
+
+ORDER SUMMARY
+-------------
+{{#each orderItems}}
+{{this.name}}
+Qty: {{this.quantity}} - {{this.price}}
+
+{{/each}}
+-------------------
+Subtotal: {{subtotal}}
+Shipping: {{shippingCost}}
+{{#if discount}}Discount: -{{discount}}{{/if}}
+-------------------
+Total: {{total}}
+
+SHIPPING TO
+-----------
+{{shippingName}}
+{{shippingAddress.line1}}
+{{#if shippingAddress.line2}}{{shippingAddress.line2}}{{/if}}
+{{shippingAddress.city}}, {{shippingAddress.state}} {{shippingAddress.zip}}
+{{shippingAddress.country}}
+
+PAYMENT METHOD
+--------------
+{{paymentMethod}}
+{{#if paymentLast4}}ending in {{paymentLast4}}{{/if}}
+
+→ View Order Status: {{orderStatusUrl}}
+
+Questions about your order? Contact our support team: {{supportUrl}}
+
+---
+HairDAO - Decentralized Science for Hair Wellness
+
+Email Preferences: {{preferencesUrl}}
+Unsubscribe: {{unsubscribeUrl}}

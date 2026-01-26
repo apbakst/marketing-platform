@@ -1,0 +1,29 @@
+🌿 We Miss You, {{firstName}}!
+==============================
+
+It's been a while since we've seen you
+
+Your hair wellness journey doesn't have to stop. We've been busy making things even better for you, and we'd love to have you back.
+
+WHAT YOU'VE MISSED
+------------------
+
+✨ New Product Launches
+Science-backed formulas you'll love
+
+📚 Latest Research
+Breakthrough studies and findings
+
+👥 Growing Community
+Thousands of success stories
+
+→ See What's New: {{shopUrl}}
+
+---
+Not interested anymore? That's okay. Update your preferences or unsubscribe below.
+
+---
+HairDAO - Decentralized Science for Hair Wellness
+
+Email Preferences: {{preferencesUrl}}
+Unsubscribe: {{unsubscribeUrl}}

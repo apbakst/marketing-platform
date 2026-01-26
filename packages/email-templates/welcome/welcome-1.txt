@@ -1,0 +1,23 @@
+Welcome to HairDAO! 🌱
+========================
+
+Hey {{firstName}},
+
+We're thrilled to have you join the HairDAO community! You've just taken the first step toward revolutionary hair wellness backed by decentralized science.
+
+WHAT TO EXPECT
+--------------
+• Exclusive access to cutting-edge hair research
+• Early product drops and member-only pricing
+• Community insights and success stories
+• Personalized recommendations based on your goals
+
+Tomorrow, we'll send you a quick guide to get started with your hair wellness journey. Keep an eye on your inbox!
+
+→ Explore Your Dashboard: {{dashboardUrl}}
+
+---
+HairDAO - Decentralized Science for Hair Wellness
+
+Email Preferences: {{preferencesUrl}}
+Unsubscribe: {{unsubscribeUrl}}

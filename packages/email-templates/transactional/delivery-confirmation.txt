@@ -1,0 +1,36 @@
+Your Order Has Arrived! 🎉
+==========================
+
+Order #{{orderNumber}} • Delivered {{deliveryDate}}
+
+Hey {{firstName}}, your HairDAO order has been delivered! We hope you love your new products.
+
+Delivered To: {{shippingAddress.line1}}, {{shippingAddress.city}}
+
+YOUR ORDER
+----------
+{{#each orderItems}}
+• {{this.name}} × {{this.quantity}}
+{{/each}}
+
+💡 QUICK START TIPS
+-------------------
+• Consistency is key - use your products as directed
+• Take progress photos every 2 weeks
+• Join our Discord for community support
+• Results typically visible in 3-6 months
+
+HOW'S EVERYTHING LOOK?
+----------------------
+We'd love to hear your feedback! Leave a review: {{reviewUrl}}
+
+→ Leave a Review: {{reviewUrl}}
+→ Get Help: {{supportUrl}}
+
+Didn't receive your package? Contact support: {{supportUrl}}
+
+---
+HairDAO - Decentralized Science for Hair Wellness
+
+Email Preferences: {{preferencesUrl}}
+Unsubscribe: {{unsubscribeUrl}}
